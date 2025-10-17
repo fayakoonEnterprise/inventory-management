@@ -31,7 +31,7 @@ function ProductsSkeleton() {
     )
 }
 
-export default function ProductsPage() {
+export default function InventoryPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -53,7 +53,7 @@ export default function ProductsPage() {
   return (
     <>
        <PageHeader 
-        title="Products" 
+        title="Inventory" 
         description="Manage your inventory and product catalog."
       >
         <ProductFormSheet onProductSaved={fetchProducts}>

@@ -22,7 +22,7 @@ import {
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-  { href: '/products', icon: Package, label: 'Products' },
+  { href: '/inventory', icon: Package, label: 'Inventory' },
   { href: '/sales', icon: ShoppingCart, label: 'Sales' },
   { href: '/purchases', icon: Truck, label: 'Purchases' },
   { href: '/reports', icon: FileText, label: 'Reports' },
@@ -47,7 +47,7 @@ export function AppSidebar() {
             <SidebarMenuItem key={item.href}>
               <SidebarMenuButton
                 asChild
-                isActive={pathname === item.href}
+                isActive={pathname.startsWith(item.href)}
                 onClick={() => setOpenMobile(false)}
                 tooltip={item.label}
               >

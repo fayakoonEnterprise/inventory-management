@@ -32,7 +32,7 @@ import { Combobox } from '@/components/ui/combobox';
 import { supabase } from '@/supabase/supabaseClient';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { ProductFormSheet } from '../products/product-form-sheet';
+import { ProductFormSheet } from '../inventory/product-form-sheet';
 
 const purchaseItemSchema = z.object({
   product_id: z.string().min(1, 'Product is required'),

@@ -24,7 +24,7 @@ export function LowStockAlerts({ products }: { products: Product[] }) {
           </div>
           <div className="ml-auto font-medium">
             <Button asChild size="sm" variant="outline">
-                <Link href={`/products?product=${product.id}`}>
+                <Link href={`/inventory?product=${product.id}`}>
                     Restock
                 </Link>
             </Button>
