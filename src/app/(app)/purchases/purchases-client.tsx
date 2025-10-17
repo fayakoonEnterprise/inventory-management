@@ -63,7 +63,7 @@ export function PurchasesClient({ initialPurchases, products }: PurchasesClientP
   }
 
   return (
-    <Card className="w-full">
+    <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>Purchases on {format(date, 'PPP')}</CardTitle>

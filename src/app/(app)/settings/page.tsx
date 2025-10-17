@@ -29,13 +29,13 @@ import Image from 'next/image';
 
 export default function SettingsPage() {
   return (
-    <div className="w-full">
+    <div className="flex flex-col">
       <PageHeader
         title="Settings"
         description="Configure your shop, manage currency, tax, and data."
       />
 
-      <Tabs defaultValue="shop" className="w-full">
+      <Tabs defaultValue="shop">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="shop">Shop Info</TabsTrigger>
           <TabsTrigger value="currency">Currency</TabsTrigger>
