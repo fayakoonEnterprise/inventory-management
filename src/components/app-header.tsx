@@ -18,6 +18,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Bell, PlusCircle, LogOut } from 'lucide-react';
 import { SaleFormSheet } from '@/app/(app)/sales/sale-form-sheet';
 import { mockProducts } from '@/lib/data';
+import { ThemeToggle } from './theme-toggle';
 
 export function AppHeader({ session }: { session: Session | null }) {
   const router = useRouter();
@@ -40,6 +41,7 @@ export function AppHeader({ session }: { session: Session | null }) {
         </SaleFormSheet>
       </div>
       <div className="ml-auto flex items-center gap-2">
+        <ThemeToggle />
         <Button variant="ghost" size="icon" className="rounded-full hover:bg-sidebar-accent">
           <Bell />
           <span className="sr-only">Toggle notifications</span>
