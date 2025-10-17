@@ -41,6 +41,7 @@ const saleItemSchema = z.object({
   // For UI display only
   name: z.string(),
   total: z.coerce.number(),
+  stock: z.number().optional(),
 });
 
 const saleSchema = z.object({
@@ -156,6 +157,7 @@ export function SaleFormSheet({ children, products, onSaleAdded }: SaleFormSheet
         price: product.selling_price,
         total: product.selling_price * quantity,
         name: product.name,
+        stock: product.stock || 0,
       });
     }
   };
@@ -209,7 +211,7 @@ export function SaleFormSheet({ children, products, onSaleAdded }: SaleFormSheet
   return (
     <Sheet open={open} onOpenChange={handleSheetOpenChange}>
       <SheetTrigger asChild>{children}</SheetTrigger>
-      <SheetContent className="sm:max-w-2xl w-full flex flex-col">
+      <SheetContent className="sm:max-w-3xl w-full flex flex-col">
         <SheetHeader>
           <SheetTitle>Add New Sale</SheetTitle>
           <SheetDescription>Select products and quantities to record a new sale.</SheetDescription>
@@ -224,9 +226,12 @@ export function SaleFormSheet({ children, products, onSaleAdded }: SaleFormSheet
                     </div>
                 )}
                 <div className="space-y-4">
-                {fields.map((field, index) => (
+                {fields.map((field, index) => {
+                  const item = watchItems[index];
+                  const remainingStock = item && item.stock !== undefined ? item.stock - item.quantity : null;
+                  return (
                     <div key={field.id} className="flex items-end gap-2 p-3 border rounded-lg">
-                        <div className="grid gap-2 flex-grow grid-cols-5">
+                        <div className="grid gap-2 flex-grow grid-cols-6">
                             <FormField
                                 control={form.control}
                                 name={`items.${index}.product_id`}
@@ -260,6 +265,12 @@ export function SaleFormSheet({ children, products, onSaleAdded }: SaleFormSheet
                                 </FormItem>
                                 )}
                             />
+                             <div className="col-span-1">
+                               <FormLabel>Stock Left</FormLabel>
+                                <div className={`font-medium text-sm h-10 flex items-center ${remainingStock !== null && remainingStock < 0 ? 'text-destructive' : ''}`}>
+                                    {remainingStock !== null ? `${remainingStock} left` : '-'}
+                                </div>
+                            </div>
                             <div className="col-span-1">
                                <FormLabel>Total</FormLabel>
                                 <div className="font-medium text-sm h-10 flex items-center">
@@ -271,14 +282,15 @@ export function SaleFormSheet({ children, products, onSaleAdded }: SaleFormSheet
                             <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                     </div>
-                ))}
+                  );
+                })}
                 </div>
                 <Button
                     type="button"
                     variant="outline"
                     size="sm"
                     className="mt-4"
-                    onClick={() => append({ product_id: '', quantity: 1, price: 0, total: 0, name: '' })}
+                    onClick={() => append({ product_id: '', quantity: 1, price: 0, total: 0, name: '', stock: 0 })}
                 >
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Add Item
