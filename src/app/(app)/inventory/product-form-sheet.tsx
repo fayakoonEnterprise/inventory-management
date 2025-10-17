@@ -28,6 +28,7 @@ import type { Product } from '@/lib/types';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/supabase/supabaseClient';
 import { useToast } from '@/hooks/use-toast';
+import { Switch } from '@/components/ui/switch';
 
 const productSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
@@ -37,6 +38,10 @@ const productSchema = z.object({
   selling_price: z.coerce.number().min(0, { message: 'Selling price must be positive.' }),
   stock: z.coerce.number().int({ message: 'Stock must be an integer.' }),
   low_stock_limit: z.coerce.number().int({ message: 'Limit must be an integer.' }),
+  is_box_sellable: z.boolean().default(false),
+  units_per_box: z.coerce.number().optional(),
+  price_per_box: z.coerce.number().optional(),
+  price_per_piece: z.coerce.number().optional(),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -60,8 +65,14 @@ export function ProductFormSheet({ children, product, onProductSaved }: ProductF
       selling_price: 0,
       stock: 0,
       low_stock_limit: 10,
+      is_box_sellable: false,
+      units_per_box: undefined,
+      price_per_box: undefined,
+      price_per_piece: undefined,
     },
   });
+
+  const isBoxSellable = form.watch('is_box_sellable');
 
   // This effect opens the sheet programmatically if a product name is passed for creation
   useEffect(() => {
@@ -76,6 +87,10 @@ export function ProductFormSheet({ children, product, onProductSaved }: ProductF
         selling_price: product?.selling_price ?? 0,
         stock: product?.stock ?? 0,
         low_stock_limit: product?.low_stock_limit ?? 10,
+        is_box_sellable: product?.is_box_sellable ?? false,
+        units_per_box: product?.units_per_box ?? undefined,
+        price_per_box: product?.price_per_box ?? undefined,
+        price_per_piece: product?.price_per_piece ?? undefined,
     })
   }, [product, form])
 
@@ -216,6 +231,67 @@ export function ProductFormSheet({ children, product, onProductSaved }: ProductF
                 )}
               />
             </div>
+            
+            <div className="space-y-4 rounded-lg border p-4">
+                <FormField
+                    control={form.control}
+                    name="is_box_sellable"
+                    render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between">
+                            <FormLabel>Sell in Boxes?</FormLabel>
+                            <FormControl>
+                                <Switch checked={field.value} onCheckedChange={field.onChange} />
+                            </FormControl>
+                        </FormItem>
+                    )}
+                />
+                {isBoxSellable && (
+                    <>
+                        <FormField
+                            control={form.control}
+                            name="units_per_box"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Units per Box</FormLabel>
+                                <FormControl>
+                                    <Input type="number" placeholder="e.g. 12" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                        <div className="grid grid-cols-2 gap-4">
+                            <FormField
+                                control={form.control}
+                                name="price_per_box"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Price per Box</FormLabel>
+                                    <FormControl>
+                                        <Input type="number" placeholder="0.00" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="price_per_piece"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Price per Piece</FormLabel>
+                                    <FormControl>
+                                    <Input type="number" placeholder="0.00" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                        </div>
+                    </>
+                )}
+            </div>
+
             <SheetFooter className="pt-4">
               <Button type="submit">{isEditMode ? 'Save Changes' : 'Create Product'}</Button>
             </SheetFooter>
