@@ -1,36 +1,150 @@
 'use client';
 
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/supabase/supabaseClient';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
 import { ShopStockLogo } from '@/components/icons';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
+
+const loginSchema = z.object({
+  email: z.string().email({ message: 'Invalid email address.' }),
+  password: z.string().min(1, { message: 'Password is required.' }),
+});
+
+type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
-  const handleGoogleLogin = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/`,
-      }
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
+
+  const form = useForm<LoginFormValues>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  });
+
+  const handleLogin = async (values: LoginFormValues) => {
+    setError(null);
+    const { error } = await supabase.auth.signInWithPassword({
+      email: values.email,
+      password: values.password,
     });
+
+    if (error) {
+      setError(error.message);
+    } else {
+      router.push('/');
+      router.refresh(); // Force a refresh to re-run the layout's session check
+    }
   };
+  
+  const handleSignUp = async (values: LoginFormValues) => {
+    setError(null);
+    const { error } = await supabase.auth.signUp({
+      email: values.email,
+      password: values.password,
+       options: {
+        emailRedirectTo: `${window.location.origin}/`,
+      },
+    });
+
+    if (error) {
+      setError(error.message);
+    } else {
+        setError("Check your email for a confirmation link to sign in.");
+    }
+  };
+
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/40">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
-            <div className="flex justify-center items-center mb-4">
-                <ShopStockLogo className="w-12 h-12 text-primary" />
-            </div>
-          <CardTitle className="text-2xl font-bold font-headline">Welcome to ShopStock</CardTitle>
-          <CardDescription>Sign in to access your inventory dashboard.</CardDescription>
+          <div className="flex justify-center items-center mb-4">
+            <ShopStockLogo className="w-12 h-12 text-primary" />
+          </div>
+          <CardTitle className="text-2xl font-bold font-headline">
+            Welcome to ShopStock
+          </CardTitle>
+          <CardDescription>
+            Sign in to access your inventory dashboard.
+          </CardDescription>
         </CardHeader>
-        <CardContent>
-          <Button onClick={handleGoogleLogin} className="w-full">
-            <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512"><path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 126 23.4 172.9 62.3l-68.6 68.6c-20.5-19.1-46.8-30.8-76.3-30.8-59.8 0-108.3 49.3-108.3 109.9s48.5 109.9 108.3 109.9c68.3 0 97.9-53.2 101.8-79.6H248v-69.8h239.2c1.4 12.8 2.8 25.3 2.8 38.2z"></path></svg>
-            Sign in with Google
-          </Button>
-        </CardContent>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleLogin)}>
+            <CardContent className="space-y-4">
+              {error && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Error</AlertTitle>
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="email"
+                        placeholder="m@example.com"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+            <CardFooter className="flex flex-col gap-4">
+              <Button type="submit" className="w-full">
+                Sign In
+              </Button>
+               <Button type="button" variant="outline" className="w-full" onClick={form.handleSubmit(handleSignUp)}>
+                Sign Up
+              </Button>
+            </CardFooter>
+          </form>
+        </Form>
       </Card>
     </div>
   );
