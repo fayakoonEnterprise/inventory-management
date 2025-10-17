@@ -30,7 +30,7 @@ export type Settings = {
 };
 
 export type SaleWithItems = Sale & {
-    sale_items: Pick<SaleItem, 'quantity'> & {
-        products: Pick<Product, 'name'> | null
-    }[]
+    sale_items: (Pick<SaleItem, 'quantity' | 'price'> & {
+        products: Pick<Product, 'id' | 'name'> | null
+    })[]
 }

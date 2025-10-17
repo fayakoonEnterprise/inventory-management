@@ -47,7 +47,9 @@ export default function SalesPage() {
                 *,
                 sale_items (
                     quantity,
+                    price,
                     products (
+                        id,
                         name
                     )
                 )

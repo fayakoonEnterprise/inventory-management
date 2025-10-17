@@ -3,7 +3,7 @@
 import type { Product, SaleWithItems } from '@/lib/types';
 import { useState } from 'react';
 import { supabase } from '@/supabase/supabaseClient';
-import { Calendar as CalendarIcon } from 'lucide-react';
+import { Calendar as CalendarIcon, MoreHorizontal, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import {
   Popover,
@@ -27,6 +27,14 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { SaleReceiptSheet } from './sale-receipt-sheet';
+
 
 type SalesClientProps = {
   initialSales: SaleWithItems[];
@@ -46,7 +54,9 @@ export function SalesClient({ initialSales, products, onDateChange }: SalesClien
             *,
             sale_items (
                 quantity,
+                price,
                 products (
+                    id,
                     name
                 )
             )
@@ -103,6 +113,7 @@ export function SalesClient({ initialSales, products, onDateChange }: SalesClien
                 <TableHead>Time</TableHead>
                 <TableHead>Items</TableHead>
                 <TableHead className="text-right">Total</TableHead>
+                <TableHead className="w-[50px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -120,11 +131,29 @@ export function SalesClient({ initialSales, products, onDateChange }: SalesClien
                       ))}
                     </TableCell>
                     <TableCell className="text-right">{formatCurrency(sale.total_amount || 0)}</TableCell>
+                    <TableCell>
+                        <SaleReceiptSheet sale={sale}>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" className="h-8 w-8 p-0">
+                                    <span className="sr-only">Open menu</span>
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                    <FileText className="mr-2 h-4 w-4" />
+                                    View Receipt
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                        </SaleReceiptSheet>
+                    </TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={3} className="h-24 text-center">
+                  <TableCell colSpan={4} className="h-24 text-center">
                     No sales recorded for this date.
                   </TableCell>
                 </TableRow>
