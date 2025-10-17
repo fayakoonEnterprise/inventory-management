@@ -2,7 +2,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -71,11 +71,22 @@ export function PurchaseFormSheet({ children, products, onPurchaseAdded }: Purch
     control: form.control,
     name: 'items',
   });
-  
-  const totalAmount = fields.reduce((sum, item, index) => {
-    const total = form.getValues(`items.${index}.total`);
-    return sum + (total || 0);
-  }, 0);
+
+  const watchedItems = form.watch('items');
+  const totalAmount = watchedItems.reduce((sum, item) => sum + (item.quantity * item.cost_price || 0), 0);
+
+  useEffect(() => {
+    const subscription = form.watch((value, { name, type }) => {
+      if (name && (name.endsWith('.quantity') || name.endsWith('.cost_price'))) {
+        const items = form.getValues('items');
+        form.setValue('items', items.map(item => ({
+            ...item,
+            total: (item.quantity || 0) * (item.cost_price || 0)
+        })), { shouldValidate: false });
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [form]);
 
 
   async function onSubmit(values: PurchaseFormValues) {
@@ -151,14 +162,6 @@ export function PurchaseFormSheet({ children, products, onPurchaseAdded }: Purch
     }
   };
   
-  const handleFieldChange = (event: React.ChangeEvent<HTMLInputElement>, index: number, fieldName: 'quantity' | 'cost_price') => {
-      const value = Number(event.target.value);
-      const currentItem = form.getValues(`items.${index}`);
-      const quantity = fieldName === 'quantity' ? value : currentItem.quantity;
-      const cost_price = fieldName === 'cost_price' ? value : currentItem.cost_price;
-      update(index, { ...currentItem, [fieldName]: value, total: quantity * cost_price });
-  }
-
   const productOptions = Object.entries(
     products.reduce((acc, product) => {
       const { category } = product;
@@ -247,7 +250,7 @@ export function PurchaseFormSheet({ children, products, onPurchaseAdded }: Purch
                                 <FormItem className="col-span-1">
                                     <FormLabel>Quantity</FormLabel>
                                     <FormControl>
-                                        <Input type="number" min="1" {...field} onChange={(e) => {field.onChange(e); handleFieldChange(e, index, 'quantity');}} />
+                                        <Input type="number" min="1" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -260,7 +263,7 @@ export function PurchaseFormSheet({ children, products, onPurchaseAdded }: Purch
                                 <FormItem className="col-span-1">
                                     <FormLabel>Unit Price</FormLabel>
                                     <FormControl>
-                                        <Input type="number" step="0.01" {...field} onChange={(e) => {field.onChange(e); handleFieldChange(e, index, 'cost_price');}} />
+                                        <Input type="number" step="0.01" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -269,7 +272,7 @@ export function PurchaseFormSheet({ children, products, onPurchaseAdded }: Purch
                             <div className="col-span-1">
                                <FormLabel>Total</FormLabel>
                                 <div className="font-medium text-sm h-10 flex items-center">
-                                    PKR {(form.getValues(`items.${index}.total`) || 0).toFixed(2)}
+                                    PKR {((watchedItems[index]?.quantity || 0) * (watchedItems[index]?.cost_price || 0)).toFixed(2)}
                                 </div>
                             </div>
                         </div>
@@ -314,3 +317,5 @@ export function PurchaseFormSheet({ children, products, onPurchaseAdded }: Purch
     </>
   );
 }
+
+    
