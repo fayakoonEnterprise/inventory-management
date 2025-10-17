@@ -95,3 +95,16 @@ export async function getDashboardStats(period: Period): Promise<DashboardStats>
         topSellingProducts,
     };
 }
+
+export async function getTotalRevenue(): Promise<number> {
+    const { data, error } = await supabase
+        .from('sales')
+        .select('total_amount');
+
+    if (error) {
+        console.error('Error fetching total revenue:', error);
+        return 0;
+    }
+
+    return data.reduce((sum, sale) => sum + (sale.total_amount || 0), 0);
+}

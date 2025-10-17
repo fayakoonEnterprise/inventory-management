@@ -9,10 +9,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { getTotalRevenue, getTodaysSales, mockProducts } from '@/lib/data';
+import { mockProducts } from '@/lib/data';
+import { getTotalRevenue } from '@/lib/dashboard-data';
 
-export default function ReportsPage() {
-    const totalSales = getTotalRevenue();
+export default async function ReportsPage() {
+    const totalSales = await getTotalRevenue();
     const totalPurchases = 5500; // Mock data
     const profit = totalSales - totalPurchases;
 
