@@ -94,7 +94,7 @@ export default function DashboardPage() {
     const { data, error } = await supabase
       .from('products')
       .select('*')
-      .filter('stock', 'lte', 'low_stock_limit');
+      .lte('stock', 'low_stock_limit');
     
     if (error) {
         console.error("Error fetching low stock products:", error.message);
