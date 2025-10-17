@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { ReactNode } from 'react';
@@ -31,6 +32,7 @@ import { Combobox } from '@/components/ui/combobox';
 import { supabase } from '@/supabase/supabaseClient';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { ProductFormSheet } from '../products/product-form-sheet';
 
 const purchaseItemSchema = z.object({
   product_id: z.string().min(1, 'Product is required'),
@@ -55,6 +57,8 @@ type PurchaseFormSheetProps = {
 export function PurchaseFormSheet({ children, products, onPurchaseAdded }: PurchaseFormSheetProps) {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
+  const [productToCreate, setProductToCreate] = useState<string | null>(null);
+
   const form = useForm<PurchaseFormValues>({
     resolver: zodResolver(purchaseSchema),
     defaultValues: {
@@ -167,8 +171,17 @@ export function PurchaseFormSheet({ children, products, onPurchaseAdded }: Purch
     options: products,
   }));
 
+  const handleProductCreate = (productName: string) => {
+    setProductToCreate(productName);
+  }
+
+  const handleProductSaved = () => {
+      onPurchaseAdded(); // This will refetch products
+      setProductToCreate(null); // Close the product form
+  }
 
   return (
+    <>
     <Sheet open={open} onOpenChange={handleSheetOpenChange}>
       <SheetTrigger asChild>{children}</SheetTrigger>
       <SheetContent className="sm:max-w-3xl w-full flex flex-col">
@@ -214,7 +227,8 @@ export function PurchaseFormSheet({ children, products, onPurchaseAdded }: Purch
                                         options={productOptions}
                                         value={field.value}
                                         onValueChange={(value) => { field.onChange(value); handleProductChange(value, index); }}
-                                        placeholder="Select a product"
+                                        onCreate={handleProductCreate}
+                                        placeholder="Select or create a product"
                                         searchPlaceholder="Search products..."
                                         notFoundPlaceholder="No product found."
                                       />
@@ -285,5 +299,15 @@ export function PurchaseFormSheet({ children, products, onPurchaseAdded }: Purch
         </Form>
       </SheetContent>
     </Sheet>
+    {productToCreate && (
+         <ProductFormSheet 
+            onProductSaved={handleProductSaved}
+            product={{ name: productToCreate } as Product}
+         >
+            {/* This is a dummy trigger, the sheet is controlled by `productToCreate` state */}
+            <></>
+        </ProductFormSheet>
+    )}
+    </>
   );
 }

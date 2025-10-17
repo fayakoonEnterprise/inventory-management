@@ -1,7 +1,8 @@
+
 "use client"
 
 import * as React from "react"
-import { Check, ChevronsUpDown } from "lucide-react"
+import { Check, ChevronsUpDown, PlusCircle } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -34,6 +35,7 @@ type ComboboxProps = {
   options: (ComboboxOption | ComboboxOptionGroup)[];
   value?: string;
   onValueChange?: (value: string) => void;
+  onCreate?: (value: string) => void;
   placeholder?: string;
   searchPlaceholder?: string;
   notFoundPlaceholder?: string;
@@ -44,12 +46,14 @@ export function Combobox({
   options,
   value,
   onValueChange,
+  onCreate,
   placeholder = "Select an option",
   searchPlaceholder = "Search...",
   notFoundPlaceholder = "No results found",
   className,
 }: ComboboxProps) {
-  const [open, setOpen] = React.useState(false)
+  const [open, setOpen] = React.useState(false);
+  const [search, setSearch] = React.useState("");
 
   const selectedOption = React.useMemo(() => {
     for (const option of options) {
@@ -62,6 +66,13 @@ export function Combobox({
     }
     return null;
   }, [options, value]);
+
+  const handleCreate = () => {
+      if (onCreate && search) {
+          onCreate(search);
+          setOpen(false);
+      }
+  }
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -78,9 +89,21 @@ export function Combobox({
       </PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
         <Command>
-          <CommandInput placeholder={searchPlaceholder} />
+          <CommandInput 
+            placeholder={searchPlaceholder} 
+            value={search}
+            onValueChange={setSearch}
+          />
           <CommandList>
-            <CommandEmpty>{notFoundPlaceholder}</CommandEmpty>
+            <CommandEmpty>
+                {onCreate ? (
+                     <Button variant="ghost" className="w-full" onClick={handleCreate}>
+                        <PlusCircle className="mr-2" /> Create "{search}"
+                    </Button>
+                ) : (
+                    notFoundPlaceholder
+                )}
+            </CommandEmpty>
             {options.map((option, index) => {
               if ('options' in option) {
                 return (

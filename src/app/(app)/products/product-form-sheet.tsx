@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { ReactNode } from 'react';
@@ -24,7 +25,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import type { Product } from '@/lib/types';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/supabase/supabaseClient';
 import { useToast } from '@/hooks/use-toast';
 
@@ -42,7 +43,7 @@ type ProductFormValues = z.infer<typeof productSchema>;
 
 type ProductFormSheetProps = {
   children: ReactNode;
-  product?: Product;
+  product?: Partial<Product>;
   onProductSaved?: () => void;
 };
 
@@ -51,15 +52,7 @@ export function ProductFormSheet({ children, product, onProductSaved }: ProductF
   const { toast } = useToast();
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
-    defaultValues: product ? {
-        name: product.name,
-        category: product.category || '',
-        unit: product.unit || '',
-        purchase_price: product.purchase_price,
-        selling_price: product.selling_price,
-        stock: product.stock || 0,
-        low_stock_limit: product.low_stock_limit || 10,
-    } : {
+    defaultValues: {
       name: '',
       category: '',
       unit: '',
@@ -70,12 +63,29 @@ export function ProductFormSheet({ children, product, onProductSaved }: ProductF
     },
   });
 
+  // This effect opens the sheet programmatically if a product name is passed for creation
+  useEffect(() => {
+    if (product?.name && !product?.id) {
+        setOpen(true);
+    }
+    form.reset({
+        name: product?.name || '',
+        category: product?.category || '',
+        unit: product?.unit || '',
+        purchase_price: product?.purchase_price ?? 0,
+        selling_price: product?.selling_price ?? 0,
+        stock: product?.stock ?? 0,
+        low_stock_limit: product?.low_stock_limit ?? 10,
+    })
+  }, [product, form])
+
+
   async function onSubmit(values: ProductFormValues) {
      const productData = {
       ...values,
     };
     
-    const { error } = product
+    const { error } = product?.id
       ? await supabase.from('products').update(productData).eq('id', product.id)
       : await supabase.from('products').insert([productData]);
 
@@ -87,7 +97,7 @@ export function ProductFormSheet({ children, product, onProductSaved }: ProductF
       });
     } else {
       toast({
-        title: product ? 'Product Updated' : 'Product Created',
+        title: product?.id ? 'Product Updated' : 'Product Created',
         description: `${values.name} has been saved successfully.`,
       });
       setOpen(false);
@@ -95,14 +105,16 @@ export function ProductFormSheet({ children, product, onProductSaved }: ProductF
     }
   }
 
+  const isEditMode = !!product?.id;
+
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>{children}</SheetTrigger>
       <SheetContent className="sm:max-w-md">
         <SheetHeader>
-          <SheetTitle>{product ? 'Edit Product' : 'Add New Product'}</SheetTitle>
+          <SheetTitle>{isEditMode ? 'Edit Product' : 'Add New Product'}</SheetTitle>
           <SheetDescription>
-            {product ? 'Update the details of your existing product.' : 'Fill in the details for the new product.'}
+            {isEditMode ? 'Update the details of your existing product.' : 'Fill in the details for the new product.'}
           </SheetDescription>
         </SheetHeader>
         <Form {...form}>
@@ -205,7 +217,7 @@ export function ProductFormSheet({ children, product, onProductSaved }: ProductF
               />
             </div>
             <SheetFooter className="pt-4">
-              <Button type="submit">{product ? 'Save Changes' : 'Create Product'}</Button>
+              <Button type="submit">{isEditMode ? 'Save Changes' : 'Create Product'}</Button>
             </SheetFooter>
           </form>
         </Form>
