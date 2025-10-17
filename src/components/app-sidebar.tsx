@@ -50,13 +50,11 @@ export function AppSidebar() {
                 isActive={pathname === item.href}
                 onClick={() => setOpenMobile(false)}
                 tooltip={item.label}
-                as={Link}
-                href={item.href}
               >
-                <>
+                <Link href={item.href}>
                   <item.icon />
                   <span>{item.label}</span>
-                </>
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
           ))}
