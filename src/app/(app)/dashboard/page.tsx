@@ -88,8 +88,8 @@ export default function DashboardPage() {
         setStats(data);
         setTotalProfit(profit);
         setLowStockProducts(data.lowStockProducts);
-    } catch (error) {
-        console.error("Error fetching dashboard data:", error);
+    } catch (error: any) {
+        console.error("Error fetching dashboard data:", error.message || error);
         setStats({ totalSales: 0, totalItemsSold: 0, topSellingProducts: [], lowStockProducts: [] });
         setTotalProfit(0);
         setLowStockProducts([]);

@@ -49,8 +49,8 @@ export async function getDashboardStats(period: Period): Promise<DashboardStats>
         .lte('sale_date', endDate);
 
     if (salesError) {
-        console.error("Error fetching sales:", salesError);
-        throw salesError;
+        console.error("Error fetching sales:", salesError.message);
+        throw new Error(`Error fetching sales: ${salesError.message}`);
     }
     
     const saleIds = sales.map(s => s.id);
@@ -65,8 +65,8 @@ export async function getDashboardStats(period: Period): Promise<DashboardStats>
             .in('sale_id', saleIds);
         
         if (itemsError) {
-            console.error("Error fetching sale items:", itemsError);
-            throw itemsError;
+            console.error("Error fetching sale items:", itemsError.message);
+            throw new Error(`Error fetching sale items: ${itemsError.message}`);
         }
         saleItems = items;
     }
@@ -77,7 +77,7 @@ export async function getDashboardStats(period: Period): Promise<DashboardStats>
     // Calculate top selling products
     const productSales = new Map<string, { name: string, quantity: number }>();
     saleItems.forEach(item => {
-        if (item.products) {
+        if (item.products?.name) {
             const productName = item.products.name;
             const existing = productSales.get(productName) || { name: productName, quantity: 0 };
             productSales.set(productName, { ...existing, quantity: existing.quantity + item.quantity });
@@ -95,8 +95,8 @@ export async function getDashboardStats(period: Period): Promise<DashboardStats>
       .filter('stock', 'lte', 'low_stock_limit');
     
     if (lowStockError) {
-        console.error("Error fetching low stock products:", lowStockError);
-        throw lowStockError;
+        console.error("Error fetching low stock products:", lowStockError.message);
+        throw new Error(`Error fetching low stock products: ${lowStockError.message}`);
     }
 
     return {
@@ -113,8 +113,8 @@ export async function getTotalProfit(): Promise<number> {
         .select('quantity, price, products ( purchase_price )');
 
     if (itemsError) {
-        console.error('Error fetching sale items for profit calc:', itemsError);
-        return 0;
+        console.error('Error fetching sale items for profit calc:', itemsError.message);
+        throw new Error(`Error fetching sale items for profit calc: ${itemsError.message}`);
     }
 
     if (!saleItems) {
