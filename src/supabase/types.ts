@@ -1,3 +1,4 @@
+
 export type Json =
   | string
   | number
@@ -333,6 +334,39 @@ export type Database = {
           selling_price?: number | null
           stock?: number | null
           stock_value?: never
+        }
+        Relationships: []
+      }
+      dashboard_metrics: {
+        Row: {
+            generated_on: string | null;
+            day: string | null;
+            week: string | null;
+            month: string | null;
+            total_revenue: number | null;
+            total_profit: number | null;
+            total_items_sold: number | null;
+            top_3_products: string | null;
+        }
+        Insert: {
+            generated_on?: string | null;
+            day?: string | null;
+            week?: string | null;
+            month?: string | null;
+            total_revenue?: number | null;
+            total_profit?: number | null;
+            total_items_sold?: number | null;
+            top_3_products?: string | null;
+        }
+        Update: {
+            generated_on?: string | null;
+            day?: string | null;
+            week?: string | null;
+            month?: string | null;
+            total_revenue?: number | null;
+            total_profit?: number | null;
+            total_items_sold?: number | null;
+            top_3_products?: string | null;
         }
         Relationships: []
       }

@@ -5,8 +5,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/supabase/supabaseClient';
 import type { Product } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ShoppingBag, BarChart3, DollarSign } from 'lucide-react';
-import { getDashboardStats, getTotalProfit } from '@/lib/dashboard-data';
+import { ShoppingBag, BarChart3, DollarSign, TrendingUp } from 'lucide-react';
+import { getDashboardStats } from '@/lib/dashboard-data';
 import type { DashboardStats } from '@/lib/dashboard-data';
 import { TopProductsChart } from './top-products-chart';
 import { LowStockAlerts } from './low-stock-alerts';
@@ -73,7 +73,6 @@ type Period = 'today' | 'weekly' | 'monthly';
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [totalProfit, setTotalProfit] = useState<number>(0);
   const [lowStockProducts, setLowStockProducts] = useState<Product[]>([]);
   const [period, setPeriod] = useState<Period>('today');
 
@@ -81,20 +80,27 @@ export default function DashboardPage() {
   const fetchDashboardData = useCallback(async (currentPeriod: Period) => {
     setLoading(true);
     try {
-        const [data, profit] = await Promise.all([
-            getDashboardStats(currentPeriod),
-            getTotalProfit()
-        ]);
+        const data = await getDashboardStats(currentPeriod);
         setStats(data);
-        setTotalProfit(profit);
-        setLowStockProducts(data.lowStockProducts);
     } catch (error: any) {
         console.error("Error fetching dashboard data:", error.message || error);
-        setStats({ totalSales: 0, totalItemsSold: 0, topSellingProducts: [], lowStockProducts: [] });
-        setTotalProfit(0);
-        setLowStockProducts([]);
+        setStats({ total_revenue: 0, total_profit: 0, total_items_sold: 0, top_3_products: null });
     } finally {
         setLoading(false);
+    }
+  }, []);
+
+  const fetchLowStockProducts = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .filter('stock', 'lte', 'low_stock_limit');
+    
+    if (error) {
+        console.error("Error fetching low stock products:", error.message);
+        setLowStockProducts([]);
+    } else {
+        setLowStockProducts(data || []);
     }
   }, []);
 
@@ -103,35 +109,25 @@ export default function DashboardPage() {
   }, [period, fetchDashboardData]);
 
   useEffect(() => {
+    fetchLowStockProducts();
+    
     const handleDbChanges = (payload: any) => {
-        // Refetch data for the current period when a relevant change occurs
-        console.log('Change detected:', payload);
+        console.log('Change detected, refetching dashboard data:', payload);
         fetchDashboardData(period);
+        fetchLowStockProducts();
     }
 
-    const productChannel = supabase
-      .channel('product-changes')
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'products' },
-        handleDbChanges
-      )
-      .subscribe();
-      
-    const salesChannel = supabase
-      .channel('sales-changes')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'sales' },
-        handleDbChanges
-      )
+    const channel = supabase
+      .channel('db-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'sales' }, handleDbChanges)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'sale_items' }, handleDbChanges)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, handleDbChanges)
       .subscribe();
 
     return () => {
-      supabase.removeChannel(productChannel);
-      supabase.removeChannel(salesChannel);
+      supabase.removeChannel(channel);
     };
-  }, [period, fetchDashboardData]);
+  }, [period, fetchDashboardData, fetchLowStockProducts]);
 
   if (loading || !stats) {
     return <DashboardSkeleton />;
@@ -146,6 +142,8 @@ export default function DashboardPage() {
     weekly: "This Week's Stats",
     monthly: "This Month's Stats",
   }
+
+  const topProductsList = stats.top_3_products ? stats.top_3_products.split(', ').slice(0, 1) : [];
 
   return (
     <>
@@ -162,20 +160,20 @@ export default function DashboardPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Sales ({period})</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Revenue ({period})</CardTitle>
             <CurrencyIcon />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalSales.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+            <div className="text-2xl font-bold">{(stats.total_revenue || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Profit</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Profit ({period})</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+            <div className="text-2xl font-bold">{(stats.total_profit || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
           </CardContent>
         </Card>
         <Card>
@@ -184,7 +182,7 @@ export default function DashboardPage() {
             <ShoppingBag className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalItemsSold}</div>
+            <div className="text-2xl font-bold">{stats.total_items_sold || 0}</div>
           </CardContent>
         </Card>
         <Card>
@@ -193,8 +191,8 @@ export default function DashboardPage() {
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-lg font-bold truncate">{stats.topSellingProducts[0]?.name || 'N/A'}</div>
-             <p className="text-xs text-muted-foreground">{stats.topSellingProducts[0]?.quantity || 0} units sold</p>
+            <div className="text-lg font-bold truncate">{topProductsList[0] || 'N/A'}</div>
+             <p className="text-xs text-muted-foreground">{topProductsList.length > 1 ? `+${topProductsList.length - 1} more` : ' '}</p>
           </CardContent>
         </Card>
       </div>
@@ -205,7 +203,7 @@ export default function DashboardPage() {
             <CardTitle>Top Selling Products ({period})</CardTitle>
           </CardHeader>
           <CardContent className="pl-2">
-            <TopProductsChart data={stats.topSellingProducts} />
+            <TopProductsChart topProductsString={stats.top_3_products} />
           </CardContent>
         </Card>
         <Card className="lg:col-span-3">
