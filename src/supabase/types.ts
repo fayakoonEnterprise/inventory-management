@@ -1,4 +1,3 @@
-
 export type Json =
   | string
   | number
@@ -40,6 +39,38 @@ export type Database = {
   }
   public: {
     Tables: {
+      low_stock_alerts: {
+        Row: {
+          alerted_at: string | null
+          id: string
+          low_stock_limit: number | null
+          product_id: string | null
+          stock_quantity: number | null
+        }
+        Insert: {
+          alerted_at?: string | null
+          id?: string
+          low_stock_limit?: number | null
+          product_id?: string | null
+          stock_quantity?: number | null
+        }
+        Update: {
+          alerted_at?: string | null
+          id?: string
+          low_stock_limit?: number | null
+          product_id?: string | null
+          stock_quantity?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "low_stock_alerts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       product_units: {
         Row: {
           conversion_factor: number
@@ -316,6 +347,17 @@ export type Database = {
         }
         Relationships: []
       }
+      dashboard_metrics: {
+        Row: {
+          sale_date: string | null
+          top_3_products: string | null
+          total_items_sold: number | null
+          total_profit: number | null
+          total_revenue: number | null
+          total_sales: number | null
+        }
+        Relationships: []
+      }
       stock_value: {
         Row: {
           name: string | null
@@ -334,39 +376,6 @@ export type Database = {
           selling_price?: number | null
           stock?: number | null
           stock_value?: never
-        }
-        Relationships: []
-      }
-      dashboard_metrics: {
-        Row: {
-            generated_on: string | null;
-            day: string | null;
-            week: string | null;
-            month: string | null;
-            total_revenue: number | null;
-            total_profit: number | null;
-            total_items_sold: number | null;
-            top_3_products: string | null;
-        }
-        Insert: {
-            generated_on?: string | null;
-            day?: string | null;
-            week?: string | null;
-            month?: string | null;
-            total_revenue?: number | null;
-            total_profit?: number | null;
-            total_items_sold?: number | null;
-            top_3_products?: string | null;
-        }
-        Update: {
-            generated_on?: string | null;
-            day?: string | null;
-            week?: string | null;
-            month?: string | null;
-            total_revenue?: number | null;
-            total_profit?: number | null;
-            total_items_sold?: number | null;
-            top_3_products?: string | null;
         }
         Relationships: []
       }
