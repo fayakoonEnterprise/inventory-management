@@ -20,7 +20,12 @@ import { Button } from '@/components/ui/button';
 import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import { ProductFormSheet } from './product-form-sheet';
 
-export function ProductsTable({ data }: { data: Product[] }) {
+type ProductsTableProps = {
+    data: Product[];
+    onProductSaved: () => void;
+}
+
+export function ProductsTable({ data, onProductSaved }: ProductsTableProps) {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-PK', {
       style: 'currency',
@@ -66,7 +71,7 @@ export function ProductsTable({ data }: { data: Product[] }) {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                    <ProductFormSheet product={product} products={data}>
+                    <ProductFormSheet product={product} onProductSaved={onProductSaved}>
                       <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                         <Pencil className="mr-2 h-4 w-4" />
                         Edit

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/supabase/supabaseClient';
 import { ProductsTable } from './products-table';
 import type { Product } from '@/lib/types';
@@ -35,20 +35,20 @@ export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      setLoading(true);
-      const { data, error } = await supabase.from('products').select('*');
-      if (error) {
-        console.error('Error fetching products:', error);
-      } else {
-        setProducts(data as Product[]);
-      }
-      setLoading(false);
-    };
-
-    fetchProducts();
+  const fetchProducts = useCallback(async () => {
+    setLoading(true);
+    const { data, error } = await supabase.from('products').select('*').order('created_at', { ascending: false });
+    if (error) {
+      console.error('Error fetching products:', error);
+    } else {
+      setProducts(data as Product[]);
+    }
+    setLoading(false);
   }, []);
+
+  useEffect(() => {
+    fetchProducts();
+  }, [fetchProducts]);
 
   return (
     <>
@@ -56,14 +56,14 @@ export default function ProductsPage() {
         title="Products" 
         description="Manage your inventory and product catalog."
       >
-        <ProductFormSheet products={products}>
+        <ProductFormSheet onProductSaved={fetchProducts}>
             <Button>
                 <PlusCircle />
                 Add Product
             </Button>
         </ProductFormSheet>
       </PageHeader>
-      {loading ? <ProductsSkeleton /> : <ProductsTable data={products} />}
+      {loading ? <ProductsSkeleton /> : <ProductsTable data={products} onProductSaved={fetchProducts} />}
     </>
   );
 }

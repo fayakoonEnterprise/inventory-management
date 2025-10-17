@@ -43,10 +43,10 @@ type ProductFormValues = z.infer<typeof productSchema>;
 type ProductFormSheetProps = {
   children: ReactNode;
   product?: Product;
-  products: Product[];
+  onProductSaved?: () => void;
 };
 
-export function ProductFormSheet({ children, product, products }: ProductFormSheetProps) {
+export function ProductFormSheet({ children, product, onProductSaved }: ProductFormSheetProps) {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
   const form = useForm<ProductFormValues>({
@@ -75,7 +75,7 @@ export function ProductFormSheet({ children, product, products }: ProductFormShe
       ...values,
     };
     
-    const { data, error } = product
+    const { error } = product
       ? await supabase.from('products').update(productData).eq('id', product.id)
       : await supabase.from('products').insert([productData]);
 
@@ -91,7 +91,7 @@ export function ProductFormSheet({ children, product, products }: ProductFormShe
         description: `${values.name} has been saved successfully.`,
       });
       setOpen(false);
-      // You'll want to refresh the data on the page here
+      onProductSaved?.();
     }
   }
 
