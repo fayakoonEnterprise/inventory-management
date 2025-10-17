@@ -79,9 +79,9 @@ export async function getTotalProfit(): Promise<number> {
       return 0;
     }
   
-    const totalProfit = saleItems.reduce((acc, item) => {
+    const totalProfit = saleItems.reduce((acc, item: any) => {
       const product = item.products;
-      if (product) {
+      if (product && typeof product.purchase_price === 'number' && typeof item.price === 'number' && typeof item.quantity === 'number') {
         const profitPerItem = item.price - product.purchase_price;
         return acc + (profitPerItem * item.quantity);
       }
