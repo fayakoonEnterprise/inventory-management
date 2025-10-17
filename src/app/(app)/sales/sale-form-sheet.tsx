@@ -5,7 +5,7 @@ import { useState, useRef } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import type { Product, SaleItem } from '@/lib/types';
+import type { Product } from '@/lib/types';
 import {
   Sheet,
   SheetContent,
@@ -25,19 +25,11 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-  SelectGroup,
-  SelectLabel,
-} from '@/components/ui/select';
 import { PlusCircle, Trash2, Printer } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useReactToPrint } from 'react-to-print';
 import { InvoicePreview } from './invoice-preview';
+import { Combobox } from '@/components/ui/combobox';
 
 const saleItemSchema = z.object({
   productId: z.string().min(1, 'Product is required'),
@@ -117,18 +109,25 @@ export function SaleFormSheet({ children, products }: SaleFormSheetProps) {
       update(index, { ...form.getValues(`items.${index}`), quantity, total: quantity * unitPrice });
   }
 
-  const groupedProducts = products.reduce((acc, product) => {
-    const { category } = product;
-    if (!acc[category]) {
-      acc[category] = [];
-    }
-    acc[category].push(product);
-    return acc;
-  }, {} as Record<string, Product[]>);
+  const productOptions = Object.entries(
+    products.reduce((acc, product) => {
+      const { category } = product;
+      if (!acc[category]) {
+        acc[category] = [];
+      }
+      acc[category].push({ value: product.id, label: product.name });
+      return acc;
+    }, {} as Record<string, { value: string; label: string }[]>)
+  ).map(([category, products]) => ({
+    label: category,
+    options: products,
+  }));
+
 
   if (submittedSale) {
     return (
       <Sheet open={open} onOpenChange={handleSheetOpenChange}>
+         <SheetTrigger asChild>{children}</SheetTrigger>
         <SheetContent className="sm:max-w-md w-full flex flex-col">
           <SheetHeader>
             <SheetTitle>Invoice Preview</SheetTitle>
@@ -167,21 +166,16 @@ export function SaleFormSheet({ children, products }: SaleFormSheetProps) {
                                 render={({ field }) => (
                                 <FormItem className="col-span-3">
                                     <FormLabel>Product</FormLabel>
-                                    <Select onValueChange={(value) => { field.onChange(value); handleProductChange(value, index); }} defaultValue={field.value}>
-                                    <FormControl>
-                                        <SelectTrigger>
-                                        <SelectValue placeholder="Select a product" />
-                                        </SelectTrigger>
+                                     <FormControl>
+                                      <Combobox
+                                        options={productOptions}
+                                        value={field.value}
+                                        onValueChange={(value) => { field.onChange(value); handleProductChange(value, index); }}
+                                        placeholder="Select a product"
+                                        searchPlaceholder="Search products..."
+                                        notFoundPlaceholder="No product found."
+                                      />
                                     </FormControl>
-                                    <SelectContent>
-                                      {Object.entries(groupedProducts).map(([category, products]) => (
-                                        <SelectGroup key={category}>
-                                          <SelectLabel>{category}</SelectLabel>
-                                          {products.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
-                                        </SelectGroup>
-                                      ))}
-                                    </SelectContent>
-                                    </Select>
                                     <FormMessage />
                                 </FormItem>
                                 )}
