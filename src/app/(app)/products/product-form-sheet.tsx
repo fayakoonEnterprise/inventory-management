@@ -33,10 +33,10 @@ const productSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
   category: z.string().min(2, { message: 'Category is required.' }),
   unit: z.string().min(1, { message: 'Unit is required.' }),
-  purchasePrice: z.coerce.number().min(0, { message: 'Purchase price must be positive.' }),
-  sellingPrice: z.coerce.number().min(0, { message: 'Selling price must be positive.' }),
+  purchase_price: z.coerce.number().min(0, { message: 'Purchase price must be positive.' }),
+  selling_price: z.coerce.number().min(0, { message: 'Selling price must be positive.' }),
   stock: z.coerce.number().int({ message: 'Stock must be an integer.' }),
-  lowStockLimit: z.coerce.number().int({ message: 'Limit must be an integer.' }),
+  low_stock_limit: z.coerce.number().int({ message: 'Limit must be an integer.' }),
 });
 
 type ProductFormValues = z.infer<typeof productSchema>;
@@ -53,22 +53,34 @@ export function ProductFormSheet({ children, product, products }: ProductFormShe
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues: product ? {
-        ...product,
+        name: product.name,
+        category: product.category || '',
+        unit: product.unit || '',
+        purchase_price: product.purchase_price,
+        selling_price: product.selling_price,
+        stock: product.stock || 0,
+        low_stock_limit: product.low_stock_limit || 10,
     } : {
       name: '',
       category: '',
       unit: '',
-      purchasePrice: 0,
-      sellingPrice: 0,
+      purchase_price: 0,
+      selling_price: 0,
       stock: 0,
-      lowStockLimit: 10,
+      low_stock_limit: 10,
     },
   });
 
   async function onSubmit(values: ProductFormValues) {
+     const productData = {
+      ...values,
+      // The DB schema doesn't have imageUrl, so we don't submit it.
+      // The UI will temporarily use a placeholder.
+    };
+    
     const { data, error } = product
-      ? await supabase.from('products').update(values).eq('id', product.id)
-      : await supabase.from('products').insert([{ ...values, imageUrl: PlaceHolderImages.find(p => p.id.startsWith('product-'))?.imageUrl || '' }]);
+      ? await supabase.from('products').update(productData).eq('id', product.id)
+      : await supabase.from('products').insert([productData]);
 
     if (error) {
       toast({
@@ -142,7 +154,7 @@ export function ProductFormSheet({ children, product, products }: ProductFormShe
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="purchasePrice"
+                name="purchase_price"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Purchase Price</FormLabel>
@@ -155,7 +167,7 @@ export function ProductFormSheet({ children, product, products }: ProductFormShe
               />
               <FormField
                 control={form.control}
-                name="sellingPrice"
+                name="selling_price"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Selling Price</FormLabel>
@@ -183,7 +195,7 @@ export function ProductFormSheet({ children, product, products }: ProductFormShe
               />
               <FormField
                 control={form.control}
-                name="lowStockLimit"
+                name="low_stock_limit"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Low Stock Limit</FormLabel>

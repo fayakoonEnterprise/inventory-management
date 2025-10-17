@@ -20,6 +20,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import { ProductFormSheet } from './product-form-sheet';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export function ProductsTable({ data }: { data: Product[] }) {
   const formatCurrency = (amount: number) => {
@@ -28,6 +29,12 @@ export function ProductsTable({ data }: { data: Product[] }) {
       currency: 'PKR',
     }).format(amount);
   };
+  
+  const productImages = PlaceHolderImages.filter(p => p.id.startsWith('product-'));
+  const getProductImage = (index: number) => {
+    return productImages[index % productImages.length]?.imageUrl || '';
+  }
+
 
   return (
     <div className="rounded-lg border">
@@ -44,24 +51,24 @@ export function ProductsTable({ data }: { data: Product[] }) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data.map((product) => (
+          {data.map((product, index) => (
             <TableRow key={product.id} className="even:bg-muted/50">
               <TableCell>
                 <Avatar className="rounded-md">
-                  <AvatarImage src={product.imageUrl} alt={product.name} />
+                  <AvatarImage src={getProductImage(index)} alt={product.name} />
                   <AvatarFallback className="rounded-md">{product.name.charAt(0)}</AvatarFallback>
                 </Avatar>
               </TableCell>
               <TableCell className="font-medium">{product.name}</TableCell>
               <TableCell>
-                {product.stock <= product.lowStockLimit ? (
+                {product.stock !== null && product.low_stock_limit !== null && product.stock <= product.low_stock_limit ? (
                   <Badge variant="destructive">{product.stock} in stock</Badge>
                 ) : (
                   <span>{product.stock} in stock</span>
                 )}
               </TableCell>
-              <TableCell>{formatCurrency(product.purchasePrice)}</TableCell>
-              <TableCell>{formatCurrency(product.sellingPrice)}</TableCell>
+              <TableCell>{formatCurrency(product.purchase_price)}</TableCell>
+              <TableCell>{formatCurrency(product.selling_price)}</TableCell>
               <TableCell>
                 <Badge variant="outline">{product.category}</Badge>
               </TableCell>
@@ -74,7 +81,7 @@ export function ProductsTable({ data }: { data: Product[] }) {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                    <ProductFormSheet product={product}>
+                    <ProductFormSheet product={product} products={data}>
                       <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                         <Pencil className="mr-2 h-4 w-4" />
                         Edit
