@@ -80,14 +80,22 @@ export default function DashboardPage() {
 
   const fetchDashboardData = useCallback(async (currentPeriod: Period) => {
     setLoading(true);
-    const [data, profit] = await Promise.all([
-        getDashboardStats(currentPeriod),
-        getTotalProfit()
-    ]);
-    setStats(data);
-    setTotalProfit(profit);
-    setLowStockProducts(data.lowStockProducts);
-    setLoading(false);
+    try {
+        const [data, profit] = await Promise.all([
+            getDashboardStats(currentPeriod),
+            getTotalProfit()
+        ]);
+        setStats(data);
+        setTotalProfit(profit);
+        setLowStockProducts(data.lowStockProducts);
+    } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+        setStats({ totalSales: 0, totalItemsSold: 0, topSellingProducts: [], lowStockProducts: [] });
+        setTotalProfit(0);
+        setLowStockProducts([]);
+    } finally {
+        setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -95,18 +103,17 @@ export default function DashboardPage() {
   }, [period, fetchDashboardData]);
 
   useEffect(() => {
-    const handleDbChanges = () => {
-        // We only refetch the data for the *current* period
-        // to avoid unnecessary re-renders if the user is looking at 'weekly'
-        // and a new sale for 'today' comes in.
+    const handleDbChanges = (payload: any) => {
+        // Refetch data for the current period when a relevant change occurs
+        console.log('Change detected:', payload);
         fetchDashboardData(period);
     }
 
     const productChannel = supabase
-      .channel('product-stock-changes')
+      .channel('product-changes')
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'products' },
+        { event: 'UPDATE', schema: 'public', table: 'products' },
         handleDbChanges
       )
       .subscribe();
