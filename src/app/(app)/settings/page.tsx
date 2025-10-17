@@ -75,9 +75,9 @@ function SettingsSkeleton() {
 }
 
 const defaultSettings: NewSettings = {
-    shop_name: 'My Shop',
+    shop_name: 'Fayakoon',
     address: '123 Main Street',
-    logo_url: 'https://picsum.photos/seed/shopstocklogo/100/100',
+    logo_url: 'https://picsum.photos/seed/fayakoonlogo/100/100',
     currency: 'PKR',
     include_tax: false
 };
@@ -236,7 +236,7 @@ export default function SettingsPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center space-x-4">
-                <Image src={settings.logo_url || 'https://picsum.photos/seed/shopstocklogo/100/100'} alt="Shop Logo" width={80} height={80} className="rounded-full" data-ai-hint="logo abstract" />
+                <Image src={settings.logo_url || 'https://picsum.photos/seed/fayakoonlogo/100/100'} alt="Shop Logo" width={80} height={80} className="rounded-full" data-ai-hint="logo abstract" />
                 <Button variant="outline">Change Logo</Button>
               </div>
               <div className="space-y-1">

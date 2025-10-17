@@ -11,7 +11,7 @@ import {
   SidebarContent,
   useSidebar,
 } from '@/components/ui/sidebar';
-import { ShopStockLogo } from '@/components/icons';
+import { FayakoonLogo } from '@/components/icons';
 import {
   LayoutDashboard,
   Package,
@@ -44,8 +44,8 @@ export function AppSidebar({ shopName, loading }: AppSidebarProps) {
     <>
       <SidebarHeader>
         <Link href="/dashboard" className="flex items-center gap-2">
-          <ShopStockLogo className="w-8 h-8 text-primary" />
-          {loading ? <Skeleton className="h-6 w-24" /> : <span className="text-lg font-semibold font-headline">{shopName || 'ShopStock'}</span>}
+          <FayakoonLogo className="w-8 h-8 text-primary" />
+          {loading ? <Skeleton className="h-6 w-24" /> : <span className="text-lg font-semibold font-headline">{shopName || 'Fayakoon'}</span>}
         </Link>
       </SidebarHeader>
       <SidebarContent>

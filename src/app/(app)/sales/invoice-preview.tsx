@@ -3,7 +3,7 @@
 import React from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Separator } from '@/components/ui/separator';
-import { ShopStockLogo } from '@/components/icons';
+import { FayakoonLogo } from '@/components/icons';
 
 type InvoicePreviewProps = {
   sale: { items: { name: string; quantity: number; unitPrice: number; total: number }[] };
@@ -22,9 +22,9 @@ export const InvoicePreview = React.forwardRef<HTMLDivElement, InvoicePreviewPro
     <div ref={ref} className="p-4 bg-white text-black text-sm">
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-2">
-            <ShopStockLogo className="w-10 h-10 text-primary" />
+            <FayakoonLogo className="w-10 h-10 text-primary" />
             <div>
-                <h1 className="text-xl font-bold font-headline">ShopStock</h1>
+                <h1 className="text-xl font-bold font-headline">Fayakoon</h1>
                 <p className="text-xs text-gray-600">123 Market St, SF, CA</p>
             </div>
         </div>
@@ -79,7 +79,7 @@ export const InvoicePreview = React.forwardRef<HTMLDivElement, InvoicePreviewPro
 
       <div className="mt-8 text-center text-xs text-gray-500">
         <p>Thank you for your business!</p>
-        <p>ShopStock POS</p>
+        <p>Fayakoon POS</p>
       </div>
     </div>
   );

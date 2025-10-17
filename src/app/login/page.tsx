@@ -21,7 +21,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { ShopStockLogo } from '@/components/icons';
+import { FayakoonLogo } from '@/components/icons';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -94,10 +94,10 @@ export default function LoginPage() {
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center">
           <div className="flex justify-center items-center mb-4">
-            <ShopStockLogo className="w-12 h-12 text-primary" />
+            <FayakoonLogo className="w-12 h-12 text-primary" />
           </div>
           <CardTitle className="text-2xl font-bold font-headline">
-            Welcome to ShopStock
+            Welcome to Fayakoon
           </CardTitle>
           <CardDescription>
             Sign in to access your inventory dashboard.

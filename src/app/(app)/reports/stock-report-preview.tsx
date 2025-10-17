@@ -3,7 +3,7 @@
 
 import React from 'react';
 import type { Product } from '@/lib/types';
-import { ShopStockLogo } from '@/components/icons';
+import { FayakoonLogo } from '@/components/icons';
 
 type StockReportPreviewProps = {
     products: Product[];
@@ -41,9 +41,9 @@ export const StockReportPreview = React.forwardRef<HTMLDivElement, StockReportPr
             <div className="print-container">
                 <header className="flex justify-between items-center pb-4 border-b border-gray-300">
                     <div className="flex items-center gap-4">
-                        <ShopStockLogo className="w-12 h-12 text-gray-800" />
+                        <FayakoonLogo className="w-12 h-12 text-gray-800" />
                         <div>
-                            <h1 className="text-2xl font-bold text-gray-900">ShopStock</h1>
+                            <h1 className="text-2xl font-bold text-gray-900">Fayakoon</h1>
                             <p className="text-xs text-gray-600">123 Market St, SF, CA</p>
                         </div>
                     </div>
@@ -95,4 +95,3 @@ export const StockReportPreview = React.forwardRef<HTMLDivElement, StockReportPr
 });
 
 StockReportPreview.displayName = 'StockReportPreview';
-
