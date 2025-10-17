@@ -72,8 +72,10 @@ export function PurchaseFormSheet({ children, products, onPurchaseAdded }: Purch
     name: 'items',
   });
   
-  const watchItems = form.watch('items');
-  const totalAmount = fields.reduce((sum, item) => sum + (form.getValues(`items.${fields.indexOf(item)}.total`) || 0), 0);
+  const totalAmount = fields.reduce((sum, item, index) => {
+    const total = form.getValues(`items.${index}.total`);
+    return sum + (total || 0);
+  }, 0);
 
 
   async function onSubmit(values: PurchaseFormValues) {
@@ -267,7 +269,7 @@ export function PurchaseFormSheet({ children, products, onPurchaseAdded }: Purch
                             <div className="col-span-1">
                                <FormLabel>Total</FormLabel>
                                 <div className="font-medium text-sm h-10 flex items-center">
-                                    PKR {(watchItems[index]?.total || 0).toFixed(2)}
+                                    PKR {(form.getValues(`items.${index}.total`) || 0).toFixed(2)}
                                 </div>
                             </div>
                         </div>
