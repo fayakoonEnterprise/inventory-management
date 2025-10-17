@@ -4,8 +4,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/supabase/supabaseClient';
 import type { Product } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package, Activity, ShoppingBag, BarChart3 } from 'lucide-react';
-import { getDashboardStats } from '@/lib/dashboard-data';
+import { Package, Activity, ShoppingBag, BarChart3, DollarSign } from 'lucide-react';
+import { getDashboardStats, getTotalRevenue } from '@/lib/dashboard-data';
 import type { DashboardStats } from '@/lib/dashboard-data';
 import { TopProductsChart } from './top-products-chart';
 import { LowStockAlerts } from './low-stock-alerts';
@@ -24,7 +24,7 @@ function DashboardSkeleton() {
                 <Skeleton className="h-10 w-64" />
             </div>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                {[...Array(2)].map((_, i) => (
+                {[...Array(4)].map((_, i) => (
                     <Card key={i}>
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <Skeleton className="h-4 w-2/3" />
@@ -34,23 +34,6 @@ function DashboardSkeleton() {
                         </CardContent>
                     </Card>
                 ))}
-                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                         <Skeleton className="h-4 w-2/3" />
-                    </CardHeader>
-                    <CardContent>
-                        <Skeleton className="h-8 w-1/2 mt-2" />
-                        <Skeleton className="h-3 w-1/3 mt-1" />
-                    </CardContent>
-                </Card>
-                 <Card>
-                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                         <Skeleton className="h-4 w-2/3" />
-                     </CardHeader>
-                     <CardContent>
-                        <Skeleton className="h-8 w-1/2 mt-2" />
-                     </CardContent>
-                 </Card>
             </div>
              <div className="grid gap-4 mt-4 md:grid-cols-2 lg:grid-cols-7">
                 <Card className="lg:col-span-4">
@@ -89,14 +72,19 @@ type Period = 'today' | 'weekly' | 'monthly';
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [totalRevenue, setTotalRevenue] = useState<number>(0);
   const [lowStockProducts, setLowStockProducts] = useState<Product[]>([]);
   const [period, setPeriod] = useState<Period>('today');
 
 
   const fetchDashboardData = useCallback(async (currentPeriod: Period) => {
     setLoading(true);
-    const data = await getDashboardStats(currentPeriod);
+    const [data, revenue] = await Promise.all([
+        getDashboardStats(currentPeriod),
+        getTotalRevenue()
+    ]);
     setStats(data);
+    setTotalRevenue(revenue);
     setLoading(false);
   }, []);
 
@@ -118,7 +106,10 @@ export default function DashboardPage() {
   }, [period, fetchDashboardData]);
 
   useEffect(() => {
-    fetchLowStockProducts();
+    const handleDbChanges = async () => {
+        await fetchDashboardData(period);
+        await fetchLowStockProducts();
+    }
 
     const productChannel = supabase
       .channel('product-stock-changes')
@@ -126,7 +117,7 @@ export default function DashboardPage() {
         'postgres_changes',
         { event: '*', schema: 'public', table: 'products' },
         (payload) => {
-          fetchLowStockProducts();
+          handleDbChanges();
         }
       )
       .subscribe();
@@ -137,7 +128,7 @@ export default function DashboardPage() {
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'sales' },
         (payload) => {
-            fetchDashboardData(period);
+           handleDbChanges();
         }
       )
       .subscribe();
@@ -146,7 +137,7 @@ export default function DashboardPage() {
       supabase.removeChannel(productChannel);
       supabase.removeChannel(salesChannel);
     };
-  }, [fetchLowStockProducts, period, fetchDashboardData]);
+  }, [period, fetchDashboardData, fetchLowStockProducts]);
 
   if (loading || !stats) {
     return <DashboardSkeleton />;
@@ -166,7 +157,7 @@ export default function DashboardPage() {
     <>
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">{periodTitles[period]}</h1>
-        <Tabs defaultValue="today" className="w-auto" onValueChange={handlePeriodChange}>
+        <Tabs defaultValue="today" className="w-auto" onValueChange={handlePeriodChange} value={period}>
             <TabsList>
                 <TabsTrigger value="today">Today</TabsTrigger>
                 <TabsTrigger value="weekly">This Week</TabsTrigger>
@@ -177,7 +168,7 @@ export default function DashboardPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Sales ({period})</CardTitle>
             <CurrencyIcon />
           </CardHeader>
           <CardContent>
@@ -186,7 +177,16 @@ export default function DashboardPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Items Sold</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Items Sold ({period})</CardTitle>
             <ShoppingBag className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -195,17 +195,7 @@ export default function DashboardPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Low Stock Items</CardTitle>
-            <Package className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{lowStockProducts.length}</div>
-            <p className="text-xs text-muted-foreground">items needing attention</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Top Product</CardTitle>
+            <CardTitle className="text-sm font-medium">Top Product ({period})</CardTitle>
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -218,7 +208,7 @@ export default function DashboardPage() {
       <div className="grid gap-4 mt-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="lg:col-span-4">
           <CardHeader>
-            <CardTitle>Top Selling Products</CardTitle>
+            <CardTitle>Top Selling Products ({period})</CardTitle>
           </CardHeader>
           <CardContent className="pl-2">
             <TopProductsChart data={stats.topSellingProducts} />
@@ -226,7 +216,7 @@ export default function DashboardPage() {
         </Card>
         <Card className="lg:col-span-3">
           <CardHeader>
-            <CardTitle>Low Stock Alerts</CardTitle>
+            <CardTitle>Low Stock Alerts ({lowStockProducts.length})</CardTitle>
           </CardHeader>
           <CardContent>
             <LowStockAlerts products={lowStockProducts} />
