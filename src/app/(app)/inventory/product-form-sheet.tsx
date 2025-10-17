@@ -29,6 +29,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/supabase/supabaseClient';
 import { useToast } from '@/hooks/use-toast';
 import { Switch } from '@/components/ui/switch';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const productSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
@@ -125,7 +126,7 @@ export function ProductFormSheet({ children, product, onProductSaved }: ProductF
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild>{children}</SheetTrigger>
-      <SheetContent className="sm:max-w-md">
+      <SheetContent className="sm:max-w-md flex flex-col">
         <SheetHeader>
           <SheetTitle>{isEditMode ? 'Edit Product' : 'Add New Product'}</SheetTitle>
           <SheetDescription>
@@ -133,166 +134,170 @@ export function ProductFormSheet({ children, product, onProductSaved }: ProductF
           </SheetDescription>
         </SheetHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Product Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="e.g. Quantum HD-Display" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="category"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Category</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. Electronics" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="unit"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Unit</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g. pcs" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="purchase_price"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Purchase Price</FormLabel>
-                    <FormControl>
-                      <Input type="number" placeholder="0.00" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="selling_price"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Selling Price</FormLabel>
-                    <FormControl>
-                      <Input type="number" placeholder="0.00" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="stock"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Current Stock</FormLabel>
-                    <FormControl>
-                      <Input type="number" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="low_stock_limit"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Low Stock Limit</FormLabel>
-                    <FormControl>
-                      <Input type="number" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-            
-            <div className="space-y-4 rounded-lg border p-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex-grow flex flex-col overflow-hidden">
+            <ScrollArea className="flex-grow pr-6 -mr-6">
+              <div className="space-y-4 pb-4">
                 <FormField
-                    control={form.control}
-                    name="is_box_sellable"
-                    render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between">
-                            <FormLabel>Sell in Boxes?</FormLabel>
-                            <FormControl>
-                                <Switch checked={field.value} onCheckedChange={field.onChange} />
-                            </FormControl>
-                        </FormItem>
-                    )}
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Product Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g. Quantum HD-Display" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
-                {isBoxSellable && (
-                    <>
-                        <FormField
-                            control={form.control}
-                            name="units_per_box"
-                            render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Units per Box</FormLabel>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="category"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Category</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g. Electronics" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="unit"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Unit</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g. pcs" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="purchase_price"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Purchase Price</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="0.00" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="selling_price"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Selling Price</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="0.00" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="stock"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Current Stock</FormLabel>
+                        <FormControl>
+                          <Input type="number" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="low_stock_limit"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Low Stock Limit</FormLabel>
+                        <FormControl>
+                          <Input type="number" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                <div className="space-y-4 rounded-lg border p-4">
+                    <FormField
+                        control={form.control}
+                        name="is_box_sellable"
+                        render={({ field }) => (
+                            <FormItem className="flex flex-row items-center justify-between">
+                                <FormLabel>Sell in Boxes?</FormLabel>
                                 <FormControl>
-                                    <Input type="number" placeholder="e.g. 12" {...field} />
+                                    <Switch checked={field.value} onCheckedChange={field.onChange} />
                                 </FormControl>
-                                <FormMessage />
                             </FormItem>
-                            )}
-                        />
-                        <div className="grid grid-cols-2 gap-4">
+                        )}
+                    />
+                    {isBoxSellable && (
+                        <>
                             <FormField
                                 control={form.control}
-                                name="price_per_box"
+                                name="units_per_box"
                                 render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Price per Box</FormLabel>
+                                    <FormLabel>Units per Box</FormLabel>
                                     <FormControl>
+                                        <Input type="number" placeholder="e.g. 12" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
+                            />
+                            <div className="grid grid-cols-2 gap-4">
+                                <FormField
+                                    control={form.control}
+                                    name="price_per_box"
+                                    render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Price per Box</FormLabel>
+                                        <FormControl>
+                                            <Input type="number" placeholder="0.00" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="price_per_piece"
+                                    render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Price per Piece</FormLabel>
+                                        <FormControl>
                                         <Input type="number" placeholder="0.00" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="price_per_piece"
-                                render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Price per Piece</FormLabel>
-                                    <FormControl>
-                                    <Input type="number" placeholder="0.00" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                                )}
-                            />
-                        </div>
-                    </>
-                )}
-            </div>
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                    )}
+                                />
+                            </div>
+                        </>
+                    )}
+                </div>
+              </div>
+            </ScrollArea>
 
-            <SheetFooter className="pt-4">
+            <SheetFooter className="pt-4 mt-auto">
               <Button type="submit">{isEditMode ? 'Save Changes' : 'Create Product'}</Button>
             </SheetFooter>
           </form>
