@@ -15,7 +15,8 @@ function getPeriodDateString(period: Period): string {
             date = startOfDay(now);
             break;
         case 'weekly':
-            date = startOfWeek(now);
+            // Explicitly set Monday as the start of the week to match PostgreSQL's `date_trunc`
+            date = startOfWeek(now, { weekStartsOn: 1 });
             break;
         case 'monthly':
             date = startOfMonth(now);
