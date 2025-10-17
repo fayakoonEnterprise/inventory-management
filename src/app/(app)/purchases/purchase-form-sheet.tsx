@@ -73,7 +73,8 @@ export function PurchaseFormSheet({ children, products, onPurchaseAdded }: Purch
   });
   
   const watchItems = form.watch('items');
-  const totalAmount = watchItems.reduce((sum, item) => sum + (item.total || 0), 0);
+  const totalAmount = fields.reduce((sum, item) => sum + (form.getValues(`items.${fields.indexOf(item)}.total`) || 0), 0);
+
 
   async function onSubmit(values: PurchaseFormValues) {
     const total_amount = values.items.reduce((sum, item) => sum + item.total, 0);
