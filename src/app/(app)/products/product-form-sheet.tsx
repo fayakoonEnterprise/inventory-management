@@ -25,6 +25,9 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import type { Product } from '@/lib/types';
 import { useState } from 'react';
+import { supabase } from '@/supabase/supabaseClient';
+import { useToast } from '@/hooks/use-toast';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 const productSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
@@ -41,10 +44,12 @@ type ProductFormValues = z.infer<typeof productSchema>;
 type ProductFormSheetProps = {
   children: ReactNode;
   product?: Product;
+  products: Product[];
 };
 
-export function ProductFormSheet({ children, product }: ProductFormSheetProps) {
+export function ProductFormSheet({ children, product, products }: ProductFormSheetProps) {
   const [open, setOpen] = useState(false);
+  const { toast } = useToast();
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
     defaultValues: product ? {
@@ -56,14 +61,29 @@ export function ProductFormSheet({ children, product }: ProductFormSheetProps) {
       purchasePrice: 0,
       sellingPrice: 0,
       stock: 0,
-      lowStockLimit: 0,
+      lowStockLimit: 10,
     },
   });
 
-  function onSubmit(values: ProductFormValues) {
-    console.log(values);
-    // Here you would call a server action to save the product
-    setOpen(false);
+  async function onSubmit(values: ProductFormValues) {
+    const { data, error } = product
+      ? await supabase.from('products').update(values).eq('id', product.id)
+      : await supabase.from('products').insert([{ ...values, imageUrl: PlaceHolderImages.find(p => p.id.startsWith('product-'))?.imageUrl || '' }]);
+
+    if (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error saving product',
+        description: error.message,
+      });
+    } else {
+      toast({
+        title: product ? 'Product Updated' : 'Product Created',
+        description: `${values.name} has been saved successfully.`,
+      });
+      setOpen(false);
+      // You'll want to refresh the data on the page here
+    }
   }
 
   return (
