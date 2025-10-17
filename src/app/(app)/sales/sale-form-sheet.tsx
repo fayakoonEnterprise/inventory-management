@@ -30,13 +30,17 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useReactToPrint } from 'react-to-print';
 import { InvoicePreview } from './invoice-preview';
 import { Combobox } from '@/components/ui/combobox';
+import { supabase } from '@/supabase/supabaseClient';
+import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
 
 const saleItemSchema = z.object({
-  productId: z.string().min(1, 'Product is required'),
+  product_id: z.string().min(1, 'Product is required'),
   quantity: z.coerce.number().min(1, 'Quantity must be at least 1'),
-  unitPrice: z.coerce.number(),
+  price: z.coerce.number(),
+  // For UI display only
+  name: z.string(),
   total: z.coerce.number(),
-  name: z.string(), // Added to store product name for invoice
 });
 
 const saleSchema = z.object({
@@ -45,20 +49,24 @@ const saleSchema = z.object({
 
 type SaleFormValues = z.infer<typeof saleSchema>;
 
+type UiSaleItem = z.infer<typeof saleItemSchema>;
+
 type SaleFormSheetProps = {
   children: ReactNode;
   products: Product[];
+  onSaleAdded: () => void;
 };
 
-export function SaleFormSheet({ children, products }: SaleFormSheetProps) {
+export function SaleFormSheet({ children, products, onSaleAdded }: SaleFormSheetProps) {
   const [open, setOpen] = useState(false);
-  const [submittedSale, setSubmittedSale] = useState<SaleFormValues | null>(null);
+  const [submittedSale, setSubmittedSale] = useState<{items: UiSaleItem[], total: number} | null>(null);
   const invoiceRef = useRef(null);
+  const { toast } = useToast();
   
   const form = useForm<SaleFormValues>({
     resolver: zodResolver(saleSchema),
     defaultValues: {
-      items: [{ productId: '', quantity: 1, unitPrice: 0, total: 0, name: '' }],
+      items: [],
     },
   });
 
@@ -74,17 +82,66 @@ export function SaleFormSheet({ children, products }: SaleFormSheetProps) {
     content: () => invoiceRef.current,
   });
 
-  function onSubmit(values: SaleFormValues) {
-    console.log(values);
-    setSubmittedSale(values);
-    // In a real app, you would save the sale to the database here.
-    // We are not resetting the form immediately to allow for printing.
+  async function onSubmit(values: SaleFormValues) {
+    const total_amount = values.items.reduce((sum, item) => sum + item.total, 0);
+
+    // 1. Create the sale record
+    const { data: saleData, error: saleError } = await supabase
+        .from('sales')
+        .insert({
+            sale_date: format(new Date(), 'yyyy-MM-dd'),
+            total_amount: total_amount,
+            payment_type: 'cash', // default
+        })
+        .select()
+        .single();
+
+    if (saleError || !saleData) {
+        toast({ variant: 'destructive', title: 'Error creating sale', description: saleError.message });
+        return;
+    }
+
+    // 2. Create sale_items records
+    const saleItemsToInsert = values.items.map(item => ({
+        sale_id: saleData.id,
+        product_id: item.product_id,
+        quantity: item.quantity,
+        price: item.price,
+    }));
+
+    const { error: itemsError } = await supabase.from('sale_items').insert(saleItemsToInsert);
+
+    if (itemsError) {
+        toast({ variant: 'destructive', title: 'Error saving sale items', description: itemsError.message });
+        // Optionally, delete the created sale record for consistency
+        await supabase.from('sales').delete().eq('id', saleData.id);
+        return;
+    }
+    
+    // 3. Update stock for each product
+    const stockUpdatePromises = values.items.map(item => {
+        const product = products.find(p => p.id === item.product_id);
+        const newStock = (product?.stock || 0) - item.quantity;
+        return supabase.from('products').update({ stock: newStock }).eq('id', item.product_id);
+    });
+
+    const stockUpdateResults = await Promise.all(stockUpdatePromises);
+    const stockUpdateError = stockUpdateResults.find(res => res.error);
+    if(stockUpdateError) {
+       toast({ variant: 'destructive', title: 'Error updating stock', description: stockUpdateError.error?.message });
+       // This is a partial failure, you might want to handle this case more gracefully
+    }
+
+
+    toast({ title: 'Sale Recorded', description: 'The sale has been successfully recorded.' });
+    setSubmittedSale({ items: values.items, total: total_amount});
+    onSaleAdded(); // Refresh the sales list
   }
   
   const handleSheetOpenChange = (isOpen: boolean) => {
     setOpen(isOpen);
     if (!isOpen) {
-      form.reset();
+      form.reset({ items: []});
       setSubmittedSale(null);
     }
   }
@@ -92,12 +149,12 @@ export function SaleFormSheet({ children, products }: SaleFormSheetProps) {
   const handleProductChange = (value: string, index: number) => {
     const product = products.find((p) => p.id === value);
     if (product) {
-      const quantity = form.getValues(`items.${index}.quantity`);
+      const quantity = form.getValues(`items.${index}.quantity`) || 1;
       update(index, {
-        productId: value,
+        product_id: value,
         quantity: quantity,
-        unitPrice: product.sellingPrice,
-        total: product.sellingPrice * quantity,
+        price: product.selling_price,
+        total: product.selling_price * quantity,
         name: product.name,
       });
     }
@@ -105,13 +162,14 @@ export function SaleFormSheet({ children, products }: SaleFormSheetProps) {
   
   const handleQuantityChange = (event: React.ChangeEvent<HTMLInputElement>, index: number) => {
       const quantity = Number(event.target.value);
-      const unitPrice = form.getValues(`items.${index}.unitPrice`);
-      update(index, { ...form.getValues(`items.${index}`), quantity, total: quantity * unitPrice });
+      const price = form.getValues(`items.${index}.price`);
+      update(index, { ...form.getValues(`items.${index}`), quantity, total: quantity * price });
   }
 
   const productOptions = Object.entries(
     products.reduce((acc, product) => {
       const { category } = product;
+      if (!category) return acc;
       if (!acc[category]) {
         acc[category] = [];
       }
@@ -125,6 +183,9 @@ export function SaleFormSheet({ children, products }: SaleFormSheetProps) {
 
 
   if (submittedSale) {
+    const invoiceSale = {
+      items: submittedSale.items.map(i => ({ name: i.name, quantity: i.quantity, unitPrice: i.price, total: i.total }))
+    }
     return (
       <Sheet open={open} onOpenChange={handleSheetOpenChange}>
          <SheetTrigger asChild>{children}</SheetTrigger>
@@ -134,7 +195,7 @@ export function SaleFormSheet({ children, products }: SaleFormSheetProps) {
             <SheetDescription>Review the generated invoice. You can print it or close this panel.</SheetDescription>
           </SheetHeader>
           <div className="flex-grow overflow-y-auto p-1">
-            <InvoicePreview ref={invoiceRef} sale={submittedSale} totalAmount={totalAmount} />
+            <InvoicePreview ref={invoiceRef} sale={invoiceSale} totalAmount={submittedSale.total} />
           </div>
           <SheetFooter className="pt-6 bg-background">
             <Button variant="outline" onClick={() => handleSheetOpenChange(false)}>Close</Button>
@@ -156,13 +217,19 @@ export function SaleFormSheet({ children, products }: SaleFormSheetProps) {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-grow">
             <ScrollArea className="flex-grow pr-6 -mr-6">
+                {fields.length === 0 && (
+                    <div className="flex flex-col items-center justify-center text-center p-8 border-dashed border-2 rounded-lg mt-4">
+                        <p className="text-muted-foreground">No items added yet.</p>
+                        <p className="text-sm text-muted-foreground">Click "Add Item" to start a sale.</p>
+                    </div>
+                )}
                 <div className="space-y-4">
                 {fields.map((field, index) => (
                     <div key={field.id} className="flex items-end gap-2 p-3 border rounded-lg">
                         <div className="grid gap-2 flex-grow grid-cols-5">
                             <FormField
                                 control={form.control}
-                                name={`items.${index}.productId`}
+                                name={`items.${index}.product_id`}
                                 render={({ field }) => (
                                 <FormItem className="col-span-3">
                                     <FormLabel>Product</FormLabel>
@@ -211,7 +278,7 @@ export function SaleFormSheet({ children, products }: SaleFormSheetProps) {
                     variant="outline"
                     size="sm"
                     className="mt-4"
-                    onClick={() => append({ productId: '', quantity: 1, unitPrice: 0, total: 0, name: '' })}
+                    onClick={() => append({ product_id: '', quantity: 1, price: 0, total: 0, name: '' })}
                 >
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Add Item
@@ -222,7 +289,7 @@ export function SaleFormSheet({ children, products }: SaleFormSheetProps) {
                     <div className="text-lg font-medium">
                         Total Amount: <span className="text-primary font-bold">PKR {totalAmount.toFixed(2)}</span>
                     </div>
-                    <Button type="submit">Generate Invoice</Button>
+                    <Button type="submit" disabled={fields.length === 0}>Generate Invoice</Button>
                 </div>
             </SheetFooter>
           </form>

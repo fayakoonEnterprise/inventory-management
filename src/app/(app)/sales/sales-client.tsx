@@ -1,9 +1,9 @@
 'use client';
 
-import type { Sale, Product } from '@/lib/types';
+import type { Product, SaleWithItems } from '@/lib/types';
 import { useState } from 'react';
-import { getSalesByDate } from '@/lib/data';
-import { Calendar as CalendarIcon, FileText } from 'lucide-react';
+import { supabase } from '@/supabase/supabaseClient';
+import { Calendar as CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import {
   Popover,
@@ -27,31 +27,43 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 
 type SalesClientProps = {
-  initialSales: Sale[];
+  initialSales: SaleWithItems[];
   products: Product[];
+  onDateChange: (sales: SaleWithItems[]) => void;
 };
 
-export function SalesClient({ initialSales, products }: SalesClientProps) {
+export function SalesClient({ initialSales, products, onDateChange }: SalesClientProps) {
   const [date, setDate] = useState<Date>(new Date());
-  const [sales, setSales] = useState<Sale[]>(
-    initialSales.filter(
-      (s) => format(new Date(s.date), 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd')
-    )
-  );
   
-  const handleDateChange = (newDate: Date | undefined) => {
+  const handleDateChange = async (newDate: Date | undefined) => {
     if (newDate) {
       setDate(newDate);
-      // In a real app, you'd fetch this from the server
-      const filteredSales = getSalesByDate(newDate);
-      setSales(filteredSales);
+      const { data, error } = await supabase
+        .from('sales')
+        .select(`
+            *,
+            sale_items (
+                quantity,
+                products (
+                    name
+                )
+            )
+        `)
+        .eq('sale_date', format(newDate, 'yyyy-MM-dd'))
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching sales for date:', error);
+        onDateChange([]);
+      } else {
+        onDateChange(data as SaleWithItems[]);
+      }
     }
   };
 
-  const totalSales = sales.reduce((acc, sale) => acc + sale.total, 0);
+  const totalSales = initialSales.reduce((acc, sale) => acc + (sale.total_amount || 0), 0);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-PK', {
@@ -59,10 +71,6 @@ export function SalesClient({ initialSales, products }: SalesClientProps) {
       currency: 'PKR',
     }).format(amount);
   };
-  
-  const getProductName = (productId: string) => {
-    return products.find(p => p.id === productId)?.name || 'Unknown Product';
-  }
 
   return (
     <Card>
@@ -92,27 +100,26 @@ export function SalesClient({ initialSales, products }: SalesClientProps) {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Invoice</TableHead>
+                <TableHead>Time</TableHead>
                 <TableHead>Items</TableHead>
                 <TableHead className="text-right">Total</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {sales.length > 0 ? (
-                sales.map((sale) => (
+              {initialSales.length > 0 ? (
+                initialSales.map((sale) => (
                   <TableRow key={sale.id} className="even:bg-muted/50">
                     <TableCell className="font-medium">
-                        <div>{sale.invoiceNumber}</div>
-                        <div className="text-sm text-muted-foreground">{format(new Date(sale.date), 'hh:mm a')}</div>
+                        <div className="text-sm text-muted-foreground">{format(new Date(sale.created_at!), 'hh:mm a')}</div>
                     </TableCell>
                     <TableCell>
-                      {sale.items.map((item, index) => (
+                      {sale.sale_items.map((item, index) => (
                         <div key={index} className="text-sm">
-                          {item.quantity} x {getProductName(item.productId)}
+                          {item.quantity} x {item.products?.name || 'Unknown Product'}
                         </div>
                       ))}
                     </TableCell>
-                    <TableCell className="text-right">{formatCurrency(sale.total)}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(sale.total_amount || 0)}</TableCell>
                   </TableRow>
                 ))
               ) : (

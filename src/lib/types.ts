@@ -1,22 +1,9 @@
 import type { Database } from "@/supabase/types";
 
 export type Product = Database["public"]["Tables"]["products"]["Row"];
+export type Sale = Database["public"]["Tables"]["sales"]["Row"];
+export type SaleItem = Database["public"]["Tables"]["sale_items"]["Row"];
 
-export type SaleItem = {
-  productId: string;
-  quantity: number;
-  unitPrice: number;
-  total: number;
-  name: string;
-};
-
-export type Sale = {
-  id: string;
-  invoiceNumber: string;
-  date: string;
-  items: SaleItem[];
-  total: number;
-};
 
 export type PurchaseItem = {
   productId: string;
@@ -41,3 +28,9 @@ export type Settings = {
   currency: string;
   taxEnabled: boolean;
 };
+
+export type SaleWithItems = Sale & {
+    sale_items: Pick<SaleItem, 'quantity'> & {
+        products: Pick<Product, 'name'> | null
+    }[]
+}

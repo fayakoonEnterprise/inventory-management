@@ -17,12 +17,22 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Bell, PlusCircle, LogOut } from 'lucide-react';
 import { SaleFormSheet } from '@/app/(app)/sales/sale-form-sheet';
-import { mockProducts } from '@/lib/data';
 import { ThemeToggle } from './theme-toggle';
+import { useEffect, useState } from 'react';
+import type { Product } from '@/lib/types';
 
 export function AppHeader({ session }: { session: Session | null }) {
   const router = useRouter();
   const user = session?.user;
+  const [products, setProducts] = useState<Product[]>([]);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      const { data } = await supabase.from('products').select('*');
+      setProducts(data || []);
+    }
+    fetchProducts();
+  }, []);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -33,7 +43,7 @@ export function AppHeader({ session }: { session: Session | null }) {
     <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-sidebar text-sidebar-foreground px-4 sm:px-6">
       <div className="flex items-center gap-2">
         <SidebarTrigger className="md:hidden" />
-        <SaleFormSheet products={mockProducts}>
+        <SaleFormSheet products={products} onSaleAdded={() => { /* Consider refreshing data */ }}>
           <Button size="sm" variant="outline" className="bg-transparent border-sidebar-border hover:bg-sidebar-accent">
             <PlusCircle className="mr-2" />
             Register Sale

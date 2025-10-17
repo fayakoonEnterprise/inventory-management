@@ -39,39 +39,89 @@ export type Database = {
   }
   public: {
     Tables: {
+      product_units: {
+        Row: {
+          conversion_factor: number
+          id: string
+          is_primary: boolean | null
+          product_id: string | null
+          purchase_price: number
+          selling_price: number
+          unit_name: string
+        }
+        Insert: {
+          conversion_factor?: number
+          id?: string
+          is_primary?: boolean | null
+          product_id?: string | null
+          purchase_price: number
+          selling_price: number
+          unit_name: string
+        }
+        Update: {
+          conversion_factor?: number
+          id?: string
+          is_primary?: boolean | null
+          product_id?: string | null
+          purchase_price?: number
+          selling_price?: number
+          unit_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_units_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           category: string | null
           created_at: string | null
           id: string
+          is_box_sellable: boolean | null
           low_stock_limit: number | null
           name: string
+          price_per_box: number | null
+          price_per_piece: number | null
           purchase_price: number
           selling_price: number
           stock: number | null
           unit: string | null
+          units_per_box: number | null
         }
         Insert: {
           category?: string | null
           created_at?: string | null
           id?: string
+          is_box_sellable?: boolean | null
           low_stock_limit?: number | null
           name: string
+          price_per_box?: number | null
+          price_per_piece?: number | null
           purchase_price: number
           selling_price: number
           stock?: number | null
           unit?: string | null
+          units_per_box?: number | null
         }
         Update: {
           category?: string | null
           created_at?: string | null
           id?: string
+          is_box_sellable?: boolean | null
           low_stock_limit?: number | null
           name?: string
+          price_per_box?: number | null
+          price_per_piece?: number | null
           purchase_price?: number
           selling_price?: number
           stock?: number | null
           unit?: string | null
+          units_per_box?: number | null
         }
         Relationships: []
       }
