@@ -1,9 +1,8 @@
-
 'use client';
 
 import type { ReactNode } from 'react';
-import { useState, useEffect } from 'react';
-import { useForm, useFieldArray } from 'react-hook-form';
+import React, { useState, useEffect } from 'react';
+import { useForm, useFieldArray, useWatch, type Control } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import type { Product } from '@/lib/types';
@@ -38,7 +37,6 @@ const purchaseItemSchema = z.object({
   product_id: z.string().min(1, 'Product is required'),
   quantity: z.coerce.number().min(1, 'Quantity must be at least 1'),
   cost_price: z.coerce.number().min(0, 'Price must be positive'),
-  total: z.coerce.number(),
 });
 
 const purchaseSchema = z.object({
@@ -47,6 +45,113 @@ const purchaseSchema = z.object({
 });
 
 type PurchaseFormValues = z.infer<typeof purchaseSchema>;
+type PurchaseItemValues = z.infer<typeof purchaseItemSchema>;
+
+type PurchaseItemRowProps = {
+  control: Control<PurchaseFormValues>;
+  index: number;
+  remove: (index: number) => void;
+  products: Product[];
+  productOptions: { label: string; options: {value: string; label: string}[] }[];
+  onProductCreate: (name: string) => void;
+  onProductChange: (value: string, index: number) => void;
+};
+
+const PurchaseItemRow = React.memo(({
+  control,
+  index,
+  remove,
+  products,
+  productOptions,
+  onProductCreate,
+  onProductChange,
+}: PurchaseItemRowProps) => {
+  const item = useWatch({
+    control,
+    name: `items.${index}`
+  });
+
+  const total = (item.quantity || 0) * (item.cost_price || 0);
+
+  return (
+    <div className="flex items-end gap-2 p-3 border rounded-lg">
+      <div className="grid gap-2 flex-grow grid-cols-6">
+        <FormField
+          control={control}
+          name={`items.${index}.product_id`}
+          render={({ field }) => (
+            <FormItem className="col-span-3">
+              <FormLabel>Product</FormLabel>
+              <FormControl>
+                <Combobox
+                  options={productOptions}
+                  value={field.value}
+                  onValueChange={(value) => {
+                    field.onChange(value);
+                    onProductChange(value, index);
+                  }}
+                  onCreate={onProductCreate}
+                  placeholder="Select or create a product"
+                  searchPlaceholder="Search products..."
+                  notFoundPlaceholder="No product found."
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={control}
+          name={`items.${index}.quantity`}
+          render={({ field }) => (
+            <FormItem className="col-span-1">
+              <FormLabel>Quantity</FormLabel>
+              <FormControl>
+                <Input type="number" min="1" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={control}
+          name={`items.${index}.cost_price`}
+          render={({ field }) => (
+            <FormItem className="col-span-1">
+              <FormLabel>Unit Price</FormLabel>
+              <FormControl>
+                <Input type="number" step="0.01" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <div className="col-span-1">
+          <FormLabel>Total</FormLabel>
+          <div className="font-medium text-sm h-10 flex items-center">
+            PKR {total.toFixed(2)}
+          </div>
+        </div>
+      </div>
+      <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
+        <Trash2 className="h-4 w-4 text-destructive" />
+      </Button>
+    </div>
+  );
+});
+PurchaseItemRow.displayName = 'PurchaseItemRow';
+
+
+const TotalAmount = ({ control }: { control: Control<PurchaseFormValues> }) => {
+  const items = useWatch({ control, name: 'items' });
+  const totalAmount = items.reduce((sum, item) => sum + ((item.quantity || 0) * (item.cost_price || 0)), 0);
+  return (
+    <div className="text-lg font-medium">
+      Total Amount: <span className="text-primary font-bold">PKR {totalAmount.toFixed(2)}</span>
+    </div>
+  );
+};
+
 
 type PurchaseFormSheetProps = {
   children: ReactNode;
@@ -72,27 +177,9 @@ export function PurchaseFormSheet({ children, products, onPurchaseAdded }: Purch
     name: 'items',
   });
 
-  const watchedItems = form.watch('items');
-  const totalAmount = watchedItems.reduce((sum, item) => sum + (item.quantity * item.cost_price || 0), 0);
-
-  useEffect(() => {
-    const subscription = form.watch((value, { name, type }) => {
-      if (name && (name.endsWith('.quantity') || name.endsWith('.cost_price'))) {
-        const items = form.getValues('items');
-        form.setValue('items', items.map(item => ({
-            ...item,
-            total: (item.quantity || 0) * (item.cost_price || 0)
-        })), { shouldValidate: false });
-      }
-    });
-    return () => subscription.unsubscribe();
-  }, [form]);
-
-
   async function onSubmit(values: PurchaseFormValues) {
-    const total_amount = values.items.reduce((sum, item) => sum + item.total, 0);
+    const total_amount = values.items.reduce((sum, item) => sum + (item.quantity * item.cost_price), 0);
 
-    // 1. Create the purchase record
     const { data: purchaseData, error: purchaseError } = await supabase
         .from('purchases')
         .insert({
@@ -108,7 +195,6 @@ export function PurchaseFormSheet({ children, products, onPurchaseAdded }: Purch
         return;
     }
 
-    // 2. Create purchase_items records
     const purchaseItemsToInsert = values.items.map(item => ({
         purchase_id: purchaseData.id,
         product_id: item.product_id,
@@ -124,7 +210,6 @@ export function PurchaseFormSheet({ children, products, onPurchaseAdded }: Purch
         return;
     }
     
-    // 3. Update stock for each product
     const stockUpdatePromises = values.items.map(item => {
         const product = products.find(p => p.id === item.product_id);
         const newStock = (product?.stock || 0) + item.quantity;
@@ -148,19 +233,6 @@ export function PurchaseFormSheet({ children, products, onPurchaseAdded }: Purch
       form.reset();
     }
   }
-
-  const handleProductChange = (value: string, index: number) => {
-    const product = products.find((p) => p.id === value);
-    if (product) {
-      const quantity = form.getValues(`items.${index}.quantity`) || 1;
-      update(index, {
-        product_id: value,
-        quantity: quantity,
-        cost_price: product.purchase_price,
-        total: product.purchase_price * quantity,
-      });
-    }
-  };
   
   const productOptions = Object.entries(
     products.reduce((acc, product) => {
@@ -182,9 +254,20 @@ export function PurchaseFormSheet({ children, products, onPurchaseAdded }: Purch
   }
 
   const handleProductSaved = () => {
-      onPurchaseAdded(); // This will refetch products
-      setProductToCreate(null); // Close the product form
+      onPurchaseAdded();
+      setProductToCreate(null);
   }
+
+  const handleProductChange = (value: string, index: number) => {
+    const product = products.find((p) => p.id === value);
+    if (product) {
+        update(index, {
+            ...form.getValues(`items.${index}`),
+            product_id: value,
+            cost_price: product.purchase_price,
+        });
+    }
+  };
 
   return (
     <>
@@ -196,7 +279,7 @@ export function PurchaseFormSheet({ children, products, onPurchaseAdded }: Purch
           <SheetDescription>Record new stock received from a supplier.</SheetDescription>
         </SheetHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-grow">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-grow overflow-hidden">
             <ScrollArea className="flex-grow pr-6 -mr-6">
                 <FormField
                     control={form.control}
@@ -220,66 +303,16 @@ export function PurchaseFormSheet({ children, products, onPurchaseAdded }: Purch
                 )}
                 <div className="space-y-4">
                 {fields.map((field, index) => (
-                    <div key={field.id} className="flex items-end gap-2 p-3 border rounded-lg">
-                        <div className="grid gap-2 flex-grow grid-cols-6">
-                            <FormField
-                                control={form.control}
-                                name={`items.${index}.product_id`}
-                                render={({ field }) => (
-                                <FormItem className="col-span-3">
-                                    <FormLabel>Product</FormLabel>
-                                    <FormControl>
-                                      <Combobox
-                                        options={productOptions}
-                                        value={field.value}
-                                        onValueChange={(value) => { field.onChange(value); handleProductChange(value, index); }}
-                                        onCreate={handleProductCreate}
-                                        placeholder="Select or create a product"
-                                        searchPlaceholder="Search products..."
-                                        notFoundPlaceholder="No product found."
-                                      />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name={`items.${index}.quantity`}
-                                render={({ field }) => (
-                                <FormItem className="col-span-1">
-                                    <FormLabel>Quantity</FormLabel>
-                                    <FormControl>
-                                        <Input type="number" min="1" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                                )}
-                            />
-                             <FormField
-                                control={form.control}
-                                name={`items.${index}.cost_price`}
-                                render={({ field }) => (
-                                <FormItem className="col-span-1">
-                                    <FormLabel>Unit Price</FormLabel>
-                                    <FormControl>
-                                        <Input type="number" step="0.01" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                                )}
-                            />
-                            <div className="col-span-1">
-                               <FormLabel>Total</FormLabel>
-                                <div className="font-medium text-sm h-10 flex items-center">
-                                    PKR {((watchedItems[index]?.quantity || 0) * (watchedItems[index]?.cost_price || 0)).toFixed(2)}
-                                </div>
-                            </div>
-                        </div>
-                        <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                    </div>
+                    <PurchaseItemRow
+                        key={field.id}
+                        control={form.control}
+                        index={index}
+                        remove={remove}
+                        products={products}
+                        productOptions={productOptions}
+                        onProductCreate={handleProductCreate}
+                        onProductChange={handleProductChange}
+                    />
                 ))}
                 </div>
                 <Button
@@ -287,7 +320,7 @@ export function PurchaseFormSheet({ children, products, onPurchaseAdded }: Purch
                     variant="outline"
                     size="sm"
                     className="mt-4"
-                    onClick={() => append({ product_id: '', quantity: 1, cost_price: 0, total: 0 })}
+                    onClick={() => append({ product_id: '', quantity: 1, cost_price: 0 })}
                 >
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Add Item
@@ -295,9 +328,7 @@ export function PurchaseFormSheet({ children, products, onPurchaseAdded }: Purch
             </ScrollArea>
             <SheetFooter className="mt-auto pt-6 bg-background">
                 <div className="flex justify-between items-center w-full">
-                    <div className="text-lg font-medium">
-                        Total Amount: <span className="text-primary font-bold">PKR {totalAmount.toFixed(2)}</span>
-                    </div>
+                    <TotalAmount control={form.control} />
                     <Button type="submit" disabled={fields.length === 0}>Record Purchase</Button>
                 </div>
             </SheetFooter>
@@ -317,5 +348,4 @@ export function PurchaseFormSheet({ children, products, onPurchaseAdded }: Purch
     </>
   );
 }
-
     
