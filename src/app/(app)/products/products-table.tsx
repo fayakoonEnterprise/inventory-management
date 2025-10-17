@@ -40,6 +40,7 @@ export function ProductsTable({ data, onProductSaved }: ProductsTableProps) {
           <TableRow>
             <TableHead>Name</TableHead>
             <TableHead>Stock</TableHead>
+            <TableHead>Unit</TableHead>
             <TableHead>Purchase Price</TableHead>
             <TableHead>Selling Price</TableHead>
             <TableHead>Category</TableHead>
@@ -57,6 +58,7 @@ export function ProductsTable({ data, onProductSaved }: ProductsTableProps) {
                   <span>{product.stock} in stock</span>
                 )}
               </TableCell>
+              <TableCell>{product.unit}</TableCell>
               <TableCell>{formatCurrency(product.purchase_price)}</TableCell>
               <TableCell>{formatCurrency(product.selling_price)}</TableCell>
               <TableCell>
