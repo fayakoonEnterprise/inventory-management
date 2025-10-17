@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/supabase/supabaseClient';
 import type { Product } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ShoppingBag, BarChart3, DollarSign, TrendingUp } from 'lucide-react';
+import { ShoppingBag, BarChart3, DollarSign } from 'lucide-react';
 import { getDashboardStats } from '@/lib/dashboard-data';
 import type { DashboardStats } from '@/lib/dashboard-data';
 import { TopProductsChart } from './top-products-chart';
@@ -84,7 +84,7 @@ export default function DashboardPage() {
         setStats(data);
     } catch (error: any) {
         console.error("Error fetching dashboard data:", error.message || error);
-        setStats({ total_revenue: 0, total_profit: 0, total_items_sold: 0, top_3_products: null });
+        setStats({ total_revenue: 0, total_profit: 0, total_items_sold: 0, top_3_products: null, day: null, generated_on: null, month: null, week: null });
     } finally {
         setLoading(false);
     }
@@ -94,7 +94,7 @@ export default function DashboardPage() {
     const { data, error } = await supabase
       .from('products')
       .select('*')
-      .filter('stock', 'lte', 'low_stock_limit');
+      .lte('stock', 'low_stock_limit');
     
     if (error) {
         console.error("Error fetching low stock products:", error.message);
@@ -173,7 +173,7 @@ export default function DashboardPage() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{(stats.total_profit || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+            <div className="text-2xl font-bold">{(stats.total_profit || 0).toLocaleString('en-US', { minimumFraction Digits: 2, maximumFractionDigits: 2 })}</div>
           </CardContent>
         </Card>
         <Card>
@@ -216,5 +216,4 @@ export default function DashboardPage() {
         </Card>
       </div>
     </>
-  );
-}
+    
