@@ -1,3 +1,4 @@
+
 import { PageHeader } from '@/components/page-header';
 import {
   Tabs,
@@ -108,7 +109,7 @@ export default function SettingsPage() {
             <CardFooter>
               <Button>Save Changes</Button>
             </CardFooter>
-          </card>
+          </Card>
         </TabsContent>
         <TabsContent value="backup">
           <Card>

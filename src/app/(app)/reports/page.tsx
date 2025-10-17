@@ -1,4 +1,3 @@
-import { PageHeader } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileText, Download, Briefcase, Archive } from 'lucide-react';
@@ -19,10 +18,6 @@ export default function ReportsPage() {
 
   return (
     <>
-      <PageHeader
-        title="Reports"
-        description="Generate and export summaries of your business activity."
-      />
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
