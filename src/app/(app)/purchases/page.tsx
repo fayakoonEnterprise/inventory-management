@@ -7,7 +7,7 @@ import { PurchaseFormSheet } from './purchase-form-sheet';
 
 export default function PurchasesPage() {
   return (
-    <>
+    <div className="w-full">
       <PageHeader
         title="Purchases"
         description="Record new stock purchases and view your purchase history."
@@ -21,6 +21,6 @@ export default function PurchasesPage() {
       </PageHeader>
 
       <PurchasesClient initialPurchases={mockPurchases} products={mockProducts} />
-    </>
+    </div>
   );
 }

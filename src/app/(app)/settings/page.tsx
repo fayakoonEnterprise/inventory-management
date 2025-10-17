@@ -29,7 +29,7 @@ import Image from 'next/image';
 
 export default function SettingsPage() {
   return (
-    <div className="flex flex-col">
+    <div className="w-full">
       <PageHeader
         title="Settings"
         description="Configure your shop, manage currency, tax, and data."
