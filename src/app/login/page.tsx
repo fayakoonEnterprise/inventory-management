@@ -27,6 +27,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Invalid email address.' }),
@@ -38,6 +39,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 export default function LoginPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -61,24 +63,31 @@ export default function LoginPage() {
       router.refresh(); // Force a refresh to re-run the layout's session check
     }
   };
-  
-  const handleSignUp = async (values: LoginFormValues) => {
+
+  const handlePasswordReset = async () => {
     setError(null);
-    const { error } = await supabase.auth.signUp({
-      email: values.email,
-      password: values.password,
-       options: {
-        emailRedirectTo: `${window.location.origin}/`,
-      },
+    const email = form.getValues('email');
+    if (!email) {
+      form.setError('email', {
+        type: 'manual',
+        message: 'Please enter your email to reset your password.',
+      });
+      return;
+    }
+    
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/`,
     });
 
     if (error) {
       setError(error.message);
     } else {
-        setError("Check your email for a confirmation link to sign in.");
+      toast({
+        title: 'Password Reset Email Sent',
+        description: 'Check your email for a link to reset your password.',
+      });
     }
   };
-
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-muted/40">
@@ -126,7 +135,17 @@ export default function LoginPage() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <div className="flex items-center justify-between">
+                      <FormLabel>Password</FormLabel>
+                      <Button
+                        type="button"
+                        variant="link"
+                        className="p-0 h-auto text-xs"
+                        onClick={handlePasswordReset}
+                      >
+                        Forgot Password?
+                      </Button>
+                    </div>
                     <FormControl>
                       <Input type="password" {...field} />
                     </FormControl>
@@ -138,9 +157,6 @@ export default function LoginPage() {
             <CardFooter className="flex flex-col gap-4">
               <Button type="submit" className="w-full">
                 Sign In
-              </Button>
-               <Button type="button" variant="outline" className="w-full" onClick={form.handleSubmit(handleSignUp)}>
-                Sign Up
               </Button>
             </CardFooter>
           </form>
