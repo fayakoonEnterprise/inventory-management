@@ -35,6 +35,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 
 type Settings = Database['public']['Tables']['settings']['Row'];
+type NewSettings = Database['public']['Tables']['settings']['Insert'];
+
 
 function SettingsSkeleton() {
     return (
@@ -71,8 +73,16 @@ function SettingsSkeleton() {
     )
 }
 
+const defaultSettings: NewSettings = {
+    shop_name: 'My Shop',
+    address: '123 Main Street',
+    logo_url: 'https://picsum.photos/seed/shopstocklogo/100/100',
+    currency: 'PKR',
+    include_tax: false
+};
+
 export default function SettingsPage() {
-  const [settings, setSettings] = useState<Settings | null>(null);
+  const [settings, setSettings] = useState<Settings | NewSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -88,7 +98,11 @@ export default function SettingsPage() {
       if (error && error.code !== 'PGRST116') { // PGRST116: no rows found
         console.error('Error fetching settings:', error);
         toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch settings.' });
-      } else {
+        setSettings(null);
+      } else if (!data) {
+        setSettings(defaultSettings);
+      }
+      else {
         setSettings(data);
       }
       setLoading(false);
@@ -103,23 +117,46 @@ export default function SettingsPage() {
   };
 
   const handleSave = async (section: string) => {
-    if (!settings || !settings.id) return;
+    if (!settings) return;
 
-    const { error } = await supabase
-        .from('settings')
-        .update({
-            shop_name: settings.shop_name,
-            address: settings.address,
-            logo_url: settings.logo_url,
-            currency: settings.currency,
-            include_tax: settings.include_tax
-        })
-        .eq('id', settings.id);
+    const settingsData = {
+        shop_name: settings.shop_name,
+        address: settings.address,
+        logo_url: settings.logo_url,
+        currency: settings.currency,
+        include_tax: settings.include_tax
+    };
+
+    let error;
+    let successMessage = '';
+
+    if ('id' in settings && settings.id) {
+        // Update existing settings
+        ({ error } = await supabase
+            .from('settings')
+            .update(settingsData)
+            .eq('id', settings.id));
+        successMessage = `Your ${section.toLowerCase()} settings have been saved.`
+    } else {
+        // Insert new settings
+        const { data: newSettings, error: insertError } = await supabase
+            .from('settings')
+            .insert(settingsData)
+            .select()
+            .single();
+        
+        error = insertError;
+        if (!error && newSettings) {
+            setSettings(newSettings); // update state with the newly created settings object (including ID)
+            successMessage = `Your shop settings have been created.`
+        }
+    }
+
 
     if (error) {
         toast({ variant: 'destructive', title: `Error saving ${section}`, description: error.message });
     } else {
-        toast({ title: `${section} Updated`, description: `Your ${section.toLowerCase()} settings have been saved.`});
+        toast({ title: `${section} Updated`, description: successMessage});
     }
   }
 
@@ -128,12 +165,14 @@ export default function SettingsPage() {
   }
   
   if (!settings) {
+    // This will now only show if there's a persistent error, not just no settings
     return (
       <div className="flex items-center justify-center h-full">
-        <p>No settings found. Please configure your shop.</p>
+        <p>Could not load settings. Please try again later.</p>
       </div>
     );
   }
+
 
   return (
     <>
