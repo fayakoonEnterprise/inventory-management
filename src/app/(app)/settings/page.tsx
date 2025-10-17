@@ -1,4 +1,8 @@
 
+'use client';
+
+import { useState, useEffect } from 'react';
+import { supabase } from '@/supabase/supabaseClient';
 import { PageHeader } from '@/components/page-header';
 import {
   Tabs,
@@ -25,10 +29,112 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { mockSettings } from '@/lib/data';
 import Image from 'next/image';
+import type { Database } from '@/supabase/types';
+import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
+
+type Settings = Database['public']['Tables']['settings']['Row'];
+
+function SettingsSkeleton() {
+    return (
+        <>
+            <PageHeader
+                title="Settings"
+                description="Configure your shop, manage currency, tax, and data."
+            />
+            <Skeleton className="h-10 w-full mb-4" />
+            <Card>
+                <CardHeader>
+                    <Skeleton className="h-6 w-1/2" />
+                    <Skeleton className="h-4 w-3/4" />
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="flex items-center space-x-4">
+                        <Skeleton className="h-20 w-20 rounded-full" />
+                        <Skeleton className="h-10 w-24" />
+                    </div>
+                    <div className="space-y-2">
+                        <Skeleton className="h-4 w-16" />
+                        <Skeleton className="h-10 w-full" />
+                    </div>
+                     <div className="space-y-2">
+                        <Skeleton className="h-4 w-16" />
+                        <Skeleton className="h-10 w-full" />
+                    </div>
+                </CardContent>
+                <CardFooter>
+                    <Skeleton className="h-10 w-28" />
+                </CardFooter>
+            </Card>
+        </>
+    )
+}
 
 export default function SettingsPage() {
+  const [settings, setSettings] = useState<Settings | null>(null);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    async function fetchSettings() {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('settings')
+        .select('*')
+        .limit(1)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') { // PGRST116: no rows found
+        console.error('Error fetching settings:', error);
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch settings.' });
+      } else {
+        setSettings(data);
+      }
+      setLoading(false);
+    }
+    fetchSettings();
+  }, [toast]);
+
+  const handleSettingChange = (key: keyof Settings, value: any) => {
+    if (settings) {
+      setSettings({ ...settings, [key]: value });
+    }
+  };
+
+  const handleSave = async (section: string) => {
+    if (!settings || !settings.id) return;
+
+    const { error } = await supabase
+        .from('settings')
+        .update({
+            shop_name: settings.shop_name,
+            address: settings.address,
+            logo_url: settings.logo_url,
+            currency: settings.currency,
+            include_tax: settings.include_tax
+        })
+        .eq('id', settings.id);
+
+    if (error) {
+        toast({ variant: 'destructive', title: `Error saving ${section}`, description: error.message });
+    } else {
+        toast({ title: `${section} Updated`, description: `Your ${section.toLowerCase()} settings have been saved.`});
+    }
+  }
+
+  if (loading) {
+    return <SettingsSkeleton />;
+  }
+  
+  if (!settings) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <p>No settings found. Please configure your shop.</p>
+      </div>
+    );
+  }
+
   return (
     <>
       <PageHeader
@@ -51,20 +157,20 @@ export default function SettingsPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center space-x-4">
-                <Image src={mockSettings.logoUrl} alt="Shop Logo" width={80} height={80} className="rounded-full" data-ai-hint="logo abstract" />
+                <Image src={settings.logo_url || 'https://picsum.photos/seed/shopstocklogo/100/100'} alt="Shop Logo" width={80} height={80} className="rounded-full" data-ai-hint="logo abstract" />
                 <Button variant="outline">Change Logo</Button>
               </div>
               <div className="space-y-1">
                 <Label htmlFor="shop-name">Shop Name</Label>
-                <Input id="shop-name" defaultValue={mockSettings.shopName} />
+                <Input id="shop-name" value={settings.shop_name} onChange={(e) => handleSettingChange('shop_name', e.target.value)} />
               </div>
               <div className="space-y-1">
                 <Label htmlFor="address">Address</Label>
-                <Input id="address" defaultValue={mockSettings.address} />
+                <Input id="address" value={settings.address || ''} onChange={(e) => handleSettingChange('address', e.target.value)} />
               </div>
             </CardContent>
             <CardFooter>
-              <Button>Save Changes</Button>
+              <Button onClick={() => handleSave('Shop Info')}>Save Changes</Button>
             </CardFooter>
           </Card>
         </TabsContent>
@@ -76,7 +182,7 @@ export default function SettingsPage() {
             </CardHeader>
             <CardContent className="space-y-2">
               <Label htmlFor="currency">Currency</Label>
-              <Select defaultValue={mockSettings.currency.toLowerCase()}>
+              <Select value={settings.currency?.toLowerCase()} onValueChange={(value) => handleSettingChange('currency', value.toUpperCase())}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue placeholder="Select a currency" />
                 </SelectTrigger>
@@ -90,7 +196,7 @@ export default function SettingsPage() {
               </Select>
             </CardContent>
             <CardFooter>
-              <Button>Save Changes</Button>
+              <Button onClick={() => handleSave('Currency')}>Save Changes</Button>
             </CardFooter>
           </Card>
         </TabsContent>
@@ -102,12 +208,12 @@ export default function SettingsPage() {
             </CardHeader>
             <CardContent>
               <div className="flex items-center space-x-2">
-                <Switch id="tax-enabled" defaultChecked={mockSettings.taxEnabled} />
+                <Switch id="tax-enabled" checked={settings.include_tax || false} onCheckedChange={(checked) => handleSettingChange('include_tax', checked)} />
                 <Label htmlFor="tax-enabled">Enable GST/VAT</Label>
               </div>
             </CardContent>
             <CardFooter>
-              <Button>Save Changes</Button>
+              <Button onClick={() => handleSave('Tax')}>Save Changes</Button>
             </CardFooter>
           </Card>
         </TabsContent>
