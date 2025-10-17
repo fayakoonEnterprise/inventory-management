@@ -259,21 +259,21 @@ export function SaleFormSheet({ children, products, onSaleAdded }: SaleFormSheet
                                 <FormItem className="col-span-1">
                                     <FormLabel>Quantity</FormLabel>
                                     <FormControl>
-                                        <Input type="number" {...field} onChange={(e) => {field.onChange(e); handleQuantityChange(e, index);}} />
+                                        <Input type="number" min="1" {...field} onChange={(e) => {field.onChange(e); handleQuantityChange(e, index);}} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
                                 )}
                             />
-                             <div className="col-span-1">
+                             <div className="col-span-1 text-center">
                                <FormLabel>Stock Left</FormLabel>
-                                <div className={`font-medium text-sm h-10 flex items-center ${remainingStock !== null && remainingStock < 0 ? 'text-destructive' : ''}`}>
+                                <div className={`font-medium text-sm h-10 flex items-center justify-center ${remainingStock !== null && remainingStock < 0 ? 'text-destructive' : ''}`}>
                                     {remainingStock !== null ? `${remainingStock} left` : '-'}
                                 </div>
                             </div>
-                            <div className="col-span-1">
+                            <div className="col-span-1 text-center">
                                <FormLabel>Total</FormLabel>
-                                <div className="font-medium text-sm h-10 flex items-center">
+                                <div className="font-medium text-sm h-10 flex items-center justify-center">
                                     PKR {(watchItems[index]?.total || 0).toFixed(2)}
                                 </div>
                             </div>
