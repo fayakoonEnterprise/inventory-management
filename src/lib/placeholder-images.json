@@ -1,3 +1,46 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "shop-logo",
+      "description": "ShopStock App Logo",
+      "imageUrl": "https://picsum.photos/seed/shopstocklogo/100/100",
+      "imageHint": "logo abstract"
+    },
+    {
+      "id": "product-1",
+      "description": "Placeholder for a generic product",
+      "imageUrl": "https://picsum.photos/seed/product1/200/200",
+      "imageHint": "product box"
+    },
+    {
+      "id": "product-2",
+      "description": "Placeholder for a generic product",
+      "imageUrl": "https://picsum.photos/seed/product2/200/200",
+      "imageHint": "electronics gadget"
+    },
+    {
+      "id": "product-3",
+      "description": "Placeholder for a generic product",
+      "imageUrl": "https://picsum.photos/seed/product3/200/200",
+      "imageHint": "kitchenware item"
+    },
+    {
+      "id": "product-4",
+      "description": "Placeholder for a generic product",
+      "imageUrl": "https://picsum.photos/seed/product4/200/200",
+      "imageHint": "clothing apparel"
+    },
+    {
+      "id": "product-5",
+      "description": "Placeholder for a generic product",
+      "imageUrl": "https://picsum.photos/seed/product5/200/200",
+      "imageHint": "office supplies"
+    },
+    {
+      "id": "product-6",
+      "description": "Placeholder for a generic product",
+      "imageUrl": "https://picsum.photos/seed/product6/200/200",
+      "imageHint": "sports equipment"
+    }
+  ]
 }
