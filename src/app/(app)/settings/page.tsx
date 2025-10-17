@@ -29,7 +29,7 @@ import Image from 'next/image';
 
 export default function SettingsPage() {
   return (
-    <>
+    <div className="w-full">
       <PageHeader
         title="Settings"
         description="Configure your shop, manage currency, tax, and data."
@@ -135,6 +135,6 @@ export default function SettingsPage() {
           </Card>
         </TabsContent>
       </Tabs>
-    </>
+    </div>
   );
 }
