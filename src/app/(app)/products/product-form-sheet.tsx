@@ -27,7 +27,6 @@ import type { Product } from '@/lib/types';
 import { useState } from 'react';
 import { supabase } from '@/supabase/supabaseClient';
 import { useToast } from '@/hooks/use-toast';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 const productSchema = z.object({
   name: z.string().min(2, { message: 'Name must be at least 2 characters.' }),
@@ -74,8 +73,6 @@ export function ProductFormSheet({ children, product, products }: ProductFormShe
   async function onSubmit(values: ProductFormValues) {
      const productData = {
       ...values,
-      // The DB schema doesn't have imageUrl, so we don't submit it.
-      // The UI will temporarily use a placeholder.
     };
     
     const { data, error } = product

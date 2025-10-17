@@ -1,6 +1,6 @@
 import type { Database } from "@/supabase/types";
 
-export type Product = Database["public"]["Tables"]["products"]["Row"] & { imageUrl?: string };
+export type Product = Database["public"]["Tables"]["products"]["Row"];
 
 export type SaleItem = {
   productId: string;

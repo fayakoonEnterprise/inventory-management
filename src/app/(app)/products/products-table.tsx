@@ -9,7 +9,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
@@ -20,7 +19,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import { ProductFormSheet } from './product-form-sheet';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 export function ProductsTable({ data }: { data: Product[] }) {
   const formatCurrency = (amount: number) => {
@@ -29,19 +27,12 @@ export function ProductsTable({ data }: { data: Product[] }) {
       currency: 'PKR',
     }).format(amount);
   };
-  
-  const productImages = PlaceHolderImages.filter(p => p.id.startsWith('product-'));
-  const getProductImage = (index: number) => {
-    return productImages[index % productImages.length]?.imageUrl || '';
-  }
-
 
   return (
     <div className="rounded-lg border">
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="w-[80px]">Image</TableHead>
             <TableHead>Name</TableHead>
             <TableHead>Stock</TableHead>
             <TableHead>Purchase Price</TableHead>
@@ -51,14 +42,8 @@ export function ProductsTable({ data }: { data: Product[] }) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {data.map((product, index) => (
+          {data.map((product) => (
             <TableRow key={product.id} className="even:bg-muted/50">
-              <TableCell>
-                <Avatar className="rounded-md">
-                  <AvatarImage src={getProductImage(index)} alt={product.name} />
-                  <AvatarFallback className="rounded-md">{product.name.charAt(0)}</AvatarFallback>
-                </Avatar>
-              </TableCell>
               <TableCell className="font-medium">{product.name}</TableCell>
               <TableCell>
                 {product.stock !== null && product.low_stock_limit !== null && product.stock <= product.low_stock_limit ? (

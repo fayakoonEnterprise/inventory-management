@@ -5,6 +5,7 @@ import {
   getTotalRevenue,
   getLowStockProducts,
   getTopSellingProducts,
+  mockProducts
 } from '@/lib/data';
 import { TopProductsChart } from './top-products-chart';
 import { LowStockAlerts } from './low-stock-alerts';
