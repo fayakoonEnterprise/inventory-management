@@ -28,16 +28,19 @@ import { Button } from '@/components/ui/button';
 import { PlusCircle, Trash2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Combobox } from '@/components/ui/combobox';
+import { supabase } from '@/supabase/supabaseClient';
+import { useToast } from '@/hooks/use-toast';
+import { format } from 'date-fns';
 
 const purchaseItemSchema = z.object({
-  productId: z.string().min(1, 'Product is required'),
+  product_id: z.string().min(1, 'Product is required'),
   quantity: z.coerce.number().min(1, 'Quantity must be at least 1'),
-  unitPrice: z.coerce.number().min(0, 'Price must be positive'),
+  cost_price: z.coerce.number().min(0, 'Price must be positive'),
   total: z.coerce.number(),
 });
 
 const purchaseSchema = z.object({
-  supplier: z.string().min(2, 'Supplier name is required'),
+  supplier_name: z.string().min(2, 'Supplier name is required'),
   items: z.array(purchaseItemSchema).min(1, 'At least one item is required'),
 });
 
@@ -46,15 +49,17 @@ type PurchaseFormValues = z.infer<typeof purchaseSchema>;
 type PurchaseFormSheetProps = {
   children: ReactNode;
   products: Product[];
+  onPurchaseAdded: () => void;
 };
 
-export function PurchaseFormSheet({ children, products }: PurchaseFormSheetProps) {
+export function PurchaseFormSheet({ children, products, onPurchaseAdded }: PurchaseFormSheetProps) {
   const [open, setOpen] = useState(false);
+  const { toast } = useToast();
   const form = useForm<PurchaseFormValues>({
     resolver: zodResolver(purchaseSchema),
     defaultValues: {
-      supplier: '',
-      items: [{ productId: '', quantity: 1, unitPrice: 0, total: 0 }],
+      supplier_name: '',
+      items: [],
     },
   });
 
@@ -66,36 +71,91 @@ export function PurchaseFormSheet({ children, products }: PurchaseFormSheetProps
   const watchItems = form.watch('items');
   const totalAmount = watchItems.reduce((sum, item) => sum + (item.total || 0), 0);
 
-  function onSubmit(values: PurchaseFormValues) {
-    console.log(values);
+  async function onSubmit(values: PurchaseFormValues) {
+    const total_amount = values.items.reduce((sum, item) => sum + item.total, 0);
+
+    // 1. Create the purchase record
+    const { data: purchaseData, error: purchaseError } = await supabase
+        .from('purchases')
+        .insert({
+            purchase_date: format(new Date(), 'yyyy-MM-dd'),
+            supplier_name: values.supplier_name,
+            total_amount: total_amount,
+        })
+        .select()
+        .single();
+
+    if (purchaseError || !purchaseData) {
+        toast({ variant: 'destructive', title: 'Error creating purchase', description: purchaseError.message });
+        return;
+    }
+
+    // 2. Create purchase_items records
+    const purchaseItemsToInsert = values.items.map(item => ({
+        purchase_id: purchaseData.id,
+        product_id: item.product_id,
+        quantity: item.quantity,
+        cost_price: item.cost_price,
+    }));
+
+    const { error: itemsError } = await supabase.from('purchase_items').insert(purchaseItemsToInsert);
+
+    if (itemsError) {
+        toast({ variant: 'destructive', title: 'Error saving purchase items', description: itemsError.message });
+        await supabase.from('purchases').delete().eq('id', purchaseData.id);
+        return;
+    }
+    
+    // 3. Update stock for each product
+    const stockUpdatePromises = values.items.map(item => {
+        const product = products.find(p => p.id === item.product_id);
+        const newStock = (product?.stock || 0) + item.quantity;
+        return supabase.from('products').update({ stock: newStock }).eq('id', item.product_id);
+    });
+
+    const stockUpdateResults = await Promise.all(stockUpdatePromises);
+    const stockUpdateError = stockUpdateResults.find(res => res.error);
+    if(stockUpdateError) {
+       toast({ variant: 'destructive', title: 'Error updating stock', description: stockUpdateError.error?.message });
+    }
+
+    toast({ title: 'Purchase Recorded', description: 'The purchase has been successfully recorded and stock updated.' });
     setOpen(false);
-    form.reset();
+    onPurchaseAdded();
+  }
+
+  const handleSheetOpenChange = (isOpen: boolean) => {
+    setOpen(isOpen);
+    if (!isOpen) {
+      form.reset();
+    }
   }
 
   const handleProductChange = (value: string, index: number) => {
     const product = products.find((p) => p.id === value);
     if (product) {
-      const quantity = form.getValues(`items.${index}.quantity`);
+      const quantity = form.getValues(`items.${index}.quantity`) || 1;
       update(index, {
-        productId: value,
+        product_id: value,
         quantity: quantity,
-        unitPrice: product.purchasePrice,
-        total: product.purchasePrice * quantity,
+        cost_price: product.purchase_price,
+        total: product.purchase_price * quantity,
       });
     }
   };
   
-  const handleFieldChange = (event: React.ChangeEvent<HTMLInputElement>, index: number, fieldName: 'quantity' | 'unitPrice') => {
+  const handleFieldChange = (event: React.ChangeEvent<HTMLInputElement>, index: number, fieldName: 'quantity' | 'cost_price') => {
       const value = Number(event.target.value);
       const currentItem = form.getValues(`items.${index}`);
       const quantity = fieldName === 'quantity' ? value : currentItem.quantity;
-      const unitPrice = fieldName === 'unitPrice' ? value : currentItem.unitPrice;
-      update(index, { ...currentItem, [fieldName]: value, total: quantity * unitPrice });
+      const cost_price = fieldName === 'cost_price' ? value : currentItem.cost_price;
+      update(index, { ...currentItem, [fieldName]: value, total: quantity * cost_price });
   }
 
   const productOptions = Object.entries(
     products.reduce((acc, product) => {
       const { category } = product;
+      if (!category) return acc;
       if (!acc[category]) {
         acc[category] = [];
       }
@@ -109,7 +169,7 @@ export function PurchaseFormSheet({ children, products }: PurchaseFormSheetProps
 
 
   return (
-    <Sheet open={open} onOpenChange={(isOpen) => { setOpen(isOpen); if(!isOpen) form.reset(); }}>
+    <Sheet open={open} onOpenChange={handleSheetOpenChange}>
       <SheetTrigger asChild>{children}</SheetTrigger>
       <SheetContent className="sm:max-w-3xl w-full flex flex-col">
         <SheetHeader>
@@ -121,7 +181,7 @@ export function PurchaseFormSheet({ children, products }: PurchaseFormSheetProps
             <ScrollArea className="flex-grow pr-6 -mr-6">
                 <FormField
                     control={form.control}
-                    name="supplier"
+                    name="supplier_name"
                     render={({ field }) => (
                     <FormItem className="mb-4">
                         <FormLabel>Supplier Name</FormLabel>
@@ -133,13 +193,19 @@ export function PurchaseFormSheet({ children, products }: PurchaseFormSheetProps
                     )}
                 />
 
+                {fields.length === 0 && (
+                    <div className="flex flex-col items-center justify-center text-center p-8 border-dashed border-2 rounded-lg mt-4">
+                        <p className="text-muted-foreground">No items added yet.</p>
+                        <p className="text-sm text-muted-foreground">Click "Add Item" to start recording a purchase.</p>
+                    </div>
+                )}
                 <div className="space-y-4">
                 {fields.map((field, index) => (
                     <div key={field.id} className="flex items-end gap-2 p-3 border rounded-lg">
                         <div className="grid gap-2 flex-grow grid-cols-6">
                             <FormField
                                 control={form.control}
-                                name={`items.${index}.productId`}
+                                name={`items.${index}.product_id`}
                                 render={({ field }) => (
                                 <FormItem className="col-span-3">
                                     <FormLabel>Product</FormLabel>
@@ -153,6 +219,7 @@ export function PurchaseFormSheet({ children, products }: PurchaseFormSheetProps
                                         notFoundPlaceholder="No product found."
                                       />
                                     </FormControl>
+                                    <FormMessage />
                                 </FormItem>
                                 )}
                             />
@@ -163,20 +230,22 @@ export function PurchaseFormSheet({ children, products }: PurchaseFormSheetProps
                                 <FormItem className="col-span-1">
                                     <FormLabel>Quantity</FormLabel>
                                     <FormControl>
-                                        <Input type="number" {...field} onChange={(e) => {field.onChange(e); handleFieldChange(e, index, 'quantity');}} />
+                                        <Input type="number" min="1" {...field} onChange={(e) => {field.onChange(e); handleFieldChange(e, index, 'quantity');}} />
                                     </FormControl>
+                                    <FormMessage />
                                 </FormItem>
                                 )}
                             />
                              <FormField
                                 control={form.control}
-                                name={`items.${index}.unitPrice`}
+                                name={`items.${index}.cost_price`}
                                 render={({ field }) => (
                                 <FormItem className="col-span-1">
                                     <FormLabel>Unit Price</FormLabel>
                                     <FormControl>
-                                        <Input type="number" step="0.01" {...field} onChange={(e) => {field.onChange(e); handleFieldChange(e, index, 'unitPrice');}} />
+                                        <Input type="number" step="0.01" {...field} onChange={(e) => {field.onChange(e); handleFieldChange(e, index, 'cost_price');}} />
                                     </FormControl>
+                                    <FormMessage />
                                 </FormItem>
                                 )}
                             />
@@ -198,7 +267,7 @@ export function PurchaseFormSheet({ children, products }: PurchaseFormSheetProps
                     variant="outline"
                     size="sm"
                     className="mt-4"
-                    onClick={() => append({ productId: '', quantity: 1, unitPrice: 0, total: 0 })}
+                    onClick={() => append({ product_id: '', quantity: 1, cost_price: 0, total: 0 })}
                 >
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Add Item
@@ -209,7 +278,7 @@ export function PurchaseFormSheet({ children, products }: PurchaseFormSheetProps
                     <div className="text-lg font-medium">
                         Total Amount: <span className="text-primary font-bold">PKR {totalAmount.toFixed(2)}</span>
                     </div>
-                    <Button type="submit">Record Purchase</Button>
+                    <Button type="submit" disabled={fields.length === 0}>Record Purchase</Button>
                 </div>
             </SheetFooter>
           </form>

@@ -1,8 +1,8 @@
 'use client';
 
-import type { Purchase, Product } from '@/lib/types';
+import type { PurchaseWithItems, Product } from '@/lib/types';
 import { useState } from 'react';
-import { getPurchasesByDate } from '@/lib/data';
+import { supabase } from '@/supabase/supabaseClient';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import {
@@ -29,27 +29,43 @@ import {
 } from '@/components/ui/card';
 
 type PurchasesClientProps = {
-  initialPurchases: Purchase[];
+  initialPurchases: PurchaseWithItems[];
   products: Product[];
+  onDateChange: (sales: PurchaseWithItems[]) => void;
 };
 
-export function PurchasesClient({ initialPurchases, products }: PurchasesClientProps) {
+export function PurchasesClient({ initialPurchases, products, onDateChange }: PurchasesClientProps) {
   const [date, setDate] = useState<Date>(new Date());
-  const [purchases, setPurchases] = useState<Purchase[]>(
-    initialPurchases.filter(
-      (p) => format(new Date(p.date), 'yyyy-MM-dd') >= format(new Date(new Date().setDate(new Date().getDate() - 7)), 'yyyy-MM-dd')
-    )
-  );
 
-  const handleDateChange = (newDate: Date | undefined) => {
+  const handleDateChange = async (newDate: Date | undefined) => {
     if (newDate) {
       setDate(newDate);
-      const filteredPurchases = getPurchasesByDate(newDate);
-      setPurchases(filteredPurchases);
+      const { data, error } = await supabase
+        .from('purchases')
+        .select(`
+            *,
+            purchase_items (
+                quantity,
+                cost_price,
+                products (
+                    id,
+                    name
+                )
+            )
+        `)
+        .eq('purchase_date', format(newDate, 'yyyy-MM-dd'))
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching purchases for date:', error);
+        onDateChange([]);
+      } else {
+        onDateChange(data as PurchaseWithItems[]);
+      }
     }
   };
   
-  const totalPurchases = purchases.reduce((acc, purchase) => acc + purchase.total, 0);
+  const totalPurchases = initialPurchases.reduce((acc, purchase) => acc + (purchase.total_amount || 0), 0);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-PK', {
@@ -57,10 +73,6 @@ export function PurchasesClient({ initialPurchases, products }: PurchasesClientP
       currency: 'PKR',
     }).format(amount);
   };
-  
-  const getProductName = (productId: string) => {
-    return products.find(p => p.id === productId)?.name || 'Unknown Product';
-  }
 
   return (
     <Card>
@@ -90,29 +102,28 @@ export function PurchasesClient({ initialPurchases, products }: PurchasesClientP
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>PO Number</TableHead>
+                <TableHead>Time</TableHead>
                 <TableHead>Supplier</TableHead>
                 <TableHead>Items</TableHead>
                 <TableHead className="text-right">Total</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {purchases.length > 0 ? (
-                purchases.map((purchase) => (
+              {initialPurchases.length > 0 ? (
+                initialPurchases.map((purchase) => (
                   <TableRow key={purchase.id} className="even:bg-muted/50">
                     <TableCell className="font-medium">
-                        <div>{purchase.purchaseOrder}</div>
-                        <div className="text-sm text-muted-foreground">{format(new Date(purchase.date), 'hh:mm a')}</div>
+                        <div className="text-sm text-muted-foreground">{format(new Date(purchase.created_at!), 'hh:mm a')}</div>
                     </TableCell>
-                    <TableCell>{purchase.supplier}</TableCell>
+                    <TableCell>{purchase.supplier_name}</TableCell>
                     <TableCell>
-                      {purchase.items.map((item, index) => (
+                      {purchase.purchase_items.map((item, index) => (
                         <div key={index} className="text-sm">
-                          {item.quantity} x {getProductName(item.productId)}
+                          {item.quantity} x {item.products?.name || 'Unknown Product'}
                         </div>
                       ))}
                     </TableCell>
-                    <TableCell className="text-right">{formatCurrency(purchase.total)}</TableCell>
+                    <TableCell className="text-right">{formatCurrency(purchase.total_amount || 0)}</TableCell>
                   </TableRow>
                 ))
               ) : (
