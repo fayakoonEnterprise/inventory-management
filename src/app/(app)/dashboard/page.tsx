@@ -94,7 +94,7 @@ export default function DashboardPage() {
     const { data, error } = await supabase
       .from('products')
       .select('*')
-      .lte('stock', 'low_stock_limit');
+      .filter('stock', 'lte', 'low_stock_limit');
     
     if (error) {
         console.error("Error fetching low stock products:", error.message);
@@ -173,7 +173,7 @@ export default function DashboardPage() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{(stats.total_profit || 0).toLocaleString('en-US', { minimumFraction Digits: 2, maximumFractionDigits: 2 })}</div>
+            <div className="text-2xl font-bold">{(stats.total_profit || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
           </CardContent>
         </Card>
         <Card>
@@ -216,4 +216,5 @@ export default function DashboardPage() {
         </Card>
       </div>
     </>
-    
+  );
+}
