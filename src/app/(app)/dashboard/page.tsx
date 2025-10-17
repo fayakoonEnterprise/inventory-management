@@ -1,16 +1,17 @@
+
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/supabase/supabaseClient';
 import type { Product } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package, Activity, ShoppingBag, BarChart3, DollarSign } from 'lucide-react';
-import { getDashboardStats, getTotalRevenue } from '@/lib/dashboard-data';
+import { ShoppingBag, BarChart3, DollarSign } from 'lucide-react';
+import { getDashboardStats, getTotalProfit } from '@/lib/dashboard-data';
 import type { DashboardStats } from '@/lib/dashboard-data';
 import { TopProductsChart } from './top-products-chart';
 import { LowStockAlerts } from './low-stock-alerts';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsTrigger, TabsList } from '@/components/ui/tabs';
 
 function CurrencyIcon() {
     return <span className="text-muted-foreground text-sm">PKR</span>;
@@ -72,43 +73,33 @@ type Period = 'today' | 'weekly' | 'monthly';
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [totalRevenue, setTotalRevenue] = useState<number>(0);
+  const [totalProfit, setTotalProfit] = useState<number>(0);
   const [lowStockProducts, setLowStockProducts] = useState<Product[]>([]);
   const [period, setPeriod] = useState<Period>('today');
 
 
   const fetchDashboardData = useCallback(async (currentPeriod: Period) => {
     setLoading(true);
-    const [data, revenue] = await Promise.all([
+    const [data, profit] = await Promise.all([
         getDashboardStats(currentPeriod),
-        getTotalRevenue()
+        getTotalProfit()
     ]);
     setStats(data);
-    setTotalRevenue(revenue);
+    setTotalProfit(profit);
+    setLowStockProducts(data.lowStockProducts);
     setLoading(false);
   }, []);
 
-  const fetchLowStockProducts = useCallback(async () => {
-    const { data, error } = await supabase
-      .from('products')
-      .select('*')
-      .filter('stock', 'lte', 'low_stock_limit');
-
-    if (error) {
-      console.error('Error fetching low stock products:', error);
-    } else {
-      setLowStockProducts(data || []);
-    }
-  }, []);
-  
   useEffect(() => {
     fetchDashboardData(period);
   }, [period, fetchDashboardData]);
 
   useEffect(() => {
-    const handleDbChanges = async () => {
-        await fetchDashboardData(period);
-        await fetchLowStockProducts();
+    const handleDbChanges = () => {
+        // We only refetch the data for the *current* period
+        // to avoid unnecessary re-renders if the user is looking at 'weekly'
+        // and a new sale for 'today' comes in.
+        fetchDashboardData(period);
     }
 
     const productChannel = supabase
@@ -116,9 +107,7 @@ export default function DashboardPage() {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'products' },
-        (payload) => {
-          handleDbChanges();
-        }
+        handleDbChanges
       )
       .subscribe();
       
@@ -127,9 +116,7 @@ export default function DashboardPage() {
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'sales' },
-        (payload) => {
-           handleDbChanges();
-        }
+        handleDbChanges
       )
       .subscribe();
 
@@ -137,7 +124,7 @@ export default function DashboardPage() {
       supabase.removeChannel(productChannel);
       supabase.removeChannel(salesChannel);
     };
-  }, [period, fetchDashboardData, fetchLowStockProducts]);
+  }, [period, fetchDashboardData]);
 
   if (loading || !stats) {
     return <DashboardSkeleton />;
@@ -177,11 +164,11 @@ export default function DashboardPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Profit</CardTitle>
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+            <div className="text-2xl font-bold">{totalProfit.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
           </CardContent>
         </Card>
         <Card>

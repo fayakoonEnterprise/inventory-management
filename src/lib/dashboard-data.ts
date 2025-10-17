@@ -1,5 +1,7 @@
+
 import { supabase } from "@/supabase/supabaseClient";
 import { startOfDay, startOfWeek, startOfMonth, endOfDay, endOfWeek, endOfMonth, formatISO } from 'date-fns';
+import type { Product } from "./types";
 
 type Period = 'today' | 'weekly' | 'monthly';
 
@@ -7,6 +9,7 @@ export type DashboardStats = {
     totalSales: number;
     totalItemsSold: number;
     topSellingProducts: { name: string; quantity: number }[];
+    lowStockProducts: Product[];
 }
 
 function getPeriodDates(period: Period) {
@@ -53,24 +56,21 @@ export async function getDashboardStats(period: Period): Promise<DashboardStats>
     const saleIds = sales.map(s => s.id);
     const totalSales = sales.reduce((sum, sale) => sum + (sale.total_amount || 0), 0);
 
-    if (saleIds.length === 0) {
-        return {
-            totalSales: 0,
-            totalItemsSold: 0,
-            topSellingProducts: []
-        };
+    let saleItems : any[] = [];
+    if (saleIds.length > 0) {
+        // Fetch sale items for the sales
+        const { data: items, error: itemsError } = await supabase
+            .from('sale_items')
+            .select('quantity, products ( name )')
+            .in('sale_id', saleIds);
+        
+        if (itemsError) {
+            console.error("Error fetching sale items:", itemsError);
+            throw itemsError;
+        }
+        saleItems = items;
     }
 
-    // Fetch sale items for the sales
-    const { data: saleItems, error: itemsError } = await supabase
-        .from('sale_items')
-        .select('quantity, products ( name )')
-        .in('sale_id', saleIds);
-    
-    if (itemsError) {
-        console.error("Error fetching sale items:", itemsError);
-        throw itemsError;
-    }
 
     const totalItemsSold = saleItems.reduce((sum, item) => sum + item.quantity, 0);
 
@@ -88,23 +88,46 @@ export async function getDashboardStats(period: Period): Promise<DashboardStats>
         .sort((a, b) => b.quantity - a.quantity)
         .slice(0, 5);
 
+    // Fetch low stock products
+    const { data: lowStockProducts, error: lowStockError } = await supabase
+      .from('products')
+      .select('*')
+      .filter('stock', 'lte', 'low_stock_limit');
+    
+    if (lowStockError) {
+        console.error("Error fetching low stock products:", lowStockError);
+        throw lowStockError;
+    }
 
     return {
         totalSales,
         totalItemsSold,
         topSellingProducts,
+        lowStockProducts: lowStockProducts || [],
     };
 }
 
-export async function getTotalRevenue(): Promise<number> {
-    const { data, error } = await supabase
-        .from('sales')
-        .select('total_amount');
+export async function getTotalProfit(): Promise<number> {
+    const { data: saleItems, error: itemsError } = await supabase
+        .from('sale_items')
+        .select('quantity, price, products ( purchase_price )');
 
-    if (error) {
-        console.error('Error fetching total revenue:', error);
+    if (itemsError) {
+        console.error('Error fetching sale items for profit calc:', itemsError);
         return 0;
     }
 
-    return data.reduce((sum, sale) => sum + (sale.total_amount || 0), 0);
+    if (!saleItems) {
+        return 0;
+    }
+
+    const totalProfit = saleItems.reduce((sum, item) => {
+        const purchasePrice = item.products?.purchase_price || 0;
+        const sellingPrice = item.price || 0;
+        const quantity = item.quantity || 0;
+        const profit = (sellingPrice - purchasePrice) * quantity;
+        return sum + profit;
+    }, 0);
+
+    return totalProfit;
 }

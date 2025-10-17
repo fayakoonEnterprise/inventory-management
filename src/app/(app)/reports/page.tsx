@@ -1,3 +1,4 @@
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileText, Download, Briefcase, Archive } from 'lucide-react';
@@ -10,12 +11,17 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { mockProducts } from '@/lib/data';
-import { getTotalRevenue } from '@/lib/dashboard-data';
+import { getTotalProfit } from '@/lib/dashboard-data';
+import { supabase } from '@/supabase/supabaseClient';
 
 export default async function ReportsPage() {
-    const totalSales = await getTotalRevenue();
-    const totalPurchases = 5500; // Mock data
-    const profit = totalSales - totalPurchases;
+    const { data: salesData } = await supabase.from('sales').select('total_amount');
+    const totalSales = salesData?.reduce((acc, sale) => acc + (sale.total_amount || 0), 0) || 0;
+    
+    const { data: purchaseData } = await supabase.from('purchases').select('total_amount');
+    const totalPurchases = purchaseData?.reduce((acc, p) => acc + (p.total_amount || 0), 0) || 0;
+    
+    const profit = await getTotalProfit();
 
   return (
     <>
