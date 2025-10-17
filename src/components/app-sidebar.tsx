@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -19,6 +20,7 @@ import {
   FileText,
   Settings,
 } from 'lucide-react';
+import { Skeleton } from './ui/skeleton';
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -29,7 +31,12 @@ const navItems = [
   { href: '/settings', icon: Settings, label: 'Settings' },
 ];
 
-export function AppSidebar() {
+type AppSidebarProps = {
+    shopName?: string | null;
+    loading?: boolean;
+}
+
+export function AppSidebar({ shopName, loading }: AppSidebarProps) {
   const pathname = usePathname();
   const { setOpenMobile } = useSidebar();
 
@@ -38,7 +45,7 @@ export function AppSidebar() {
       <SidebarHeader>
         <Link href="/dashboard" className="flex items-center gap-2">
           <ShopStockLogo className="w-8 h-8 text-primary" />
-          <span className="text-lg font-semibold font-headline">ShopStock</span>
+          {loading ? <Skeleton className="h-6 w-24" /> : <span className="text-lg font-semibold font-headline">{shopName || 'ShopStock'}</span>}
         </Link>
       </SidebarHeader>
       <SidebarContent>

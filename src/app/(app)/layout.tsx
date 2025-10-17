@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { ReactNode } from 'react';
@@ -9,6 +10,9 @@ import { SidebarProvider, Sidebar } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/app-sidebar';
 import { AppHeader } from '@/components/app-header';
 import { Skeleton } from '@/components/ui/skeleton';
+import type { Database } from '@/supabase/types';
+
+type Settings = Database['public']['Tables']['settings']['Row'];
 
 function AppSkeleton() {
   return (
@@ -57,32 +61,57 @@ export default function AppLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [settings, setSettings] = useState<Settings | null>(null);
 
   useEffect(() => {
-    const getSession = async () => {
+    const getSessionAndSettings = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setSession(session);
-      setLoading(false);
 
       if (!session) {
+        setLoading(false);
         router.push('/login');
+        return;
       }
+
+      const { data: settingsData, error } = await supabase
+        .from('settings')
+        .select('*')
+        .limit(1)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching settings:', error);
+      } else {
+        setSettings(settingsData);
+      }
+      
+      setLoading(false);
     };
 
-    getSession();
+    getSessionAndSettings();
 
     const { data: authListener } = supabase.auth.onAuthStateChange(
       (_event, session) => {
         setSession(session);
-        setLoading(false);
         if (!session) {
           router.push('/login');
         }
       }
     );
 
+    const settingsListener = supabase
+        .channel('public:settings')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'settings' }, (payload) => {
+            if(payload.new) {
+                setSettings(payload.new as Settings);
+            }
+        })
+        .subscribe();
+
     return () => {
       authListener.subscription.unsubscribe();
+      supabase.removeChannel(settingsListener);
     };
   }, [router]);
 
@@ -98,10 +127,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     <SidebarProvider>
       <div className="flex min-h-screen w-screen bg-muted/40">
         <Sidebar>
-          <AppSidebar />
+          <AppSidebar shopName={settings?.shop_name} loading={loading} />
         </Sidebar>
         <div className="flex flex-col flex-1">
-           <AppHeader session={session} />
+           <AppHeader session={session} shopName={settings?.shop_name} />
            <main className="flex-1 p-4 sm:p-6 lg:p-8">
             <div className="w-full">
                 {children}

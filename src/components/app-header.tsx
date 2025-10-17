@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -21,7 +22,7 @@ import { ThemeToggle } from './theme-toggle';
 import { useEffect, useState } from 'react';
 import type { Product } from '@/lib/types';
 
-export function AppHeader({ session }: { session: Session | null }) {
+export function AppHeader({ session, shopName }: { session: Session | null, shopName?: string | null }) {
   const router = useRouter();
   const user = session?.user;
   const [products, setProducts] = useState<Product[]>([]);
