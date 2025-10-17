@@ -7,7 +7,7 @@ import { SaleFormSheet } from './sale-form-sheet';
 
 export default function SalesPage() {
   return (
-    <div className="w-full">
+    <>
       <PageHeader
         title="Sales"
         description="Record new sales and view your sales history."
@@ -21,6 +21,6 @@ export default function SalesPage() {
       </PageHeader>
       
       <SalesClient initialSales={mockSales} products={mockProducts} />
-    </div>
+    </>
   );
 }
