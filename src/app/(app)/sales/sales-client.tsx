@@ -132,22 +132,22 @@ export function SalesClient({ initialSales, products, onDateChange }: SalesClien
                     </TableCell>
                     <TableCell className="text-right">{formatCurrency(sale.total_amount || 0)}</TableCell>
                     <TableCell>
-                        <SaleReceiptSheet sale={sale}>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" className="h-8 w-8 p-0">
-                                    <span className="sr-only">Open menu</span>
-                                    <MoreHorizontal className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                    <FileText className="mr-2 h-4 w-4" />
-                                    View Receipt
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                        </SaleReceiptSheet>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="h-8 w-8 p-0">
+                                <span className="sr-only">Open menu</span>
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <SaleReceiptSheet sale={sale}>
+                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                        <FileText className="mr-2 h-4 w-4" />
+                                        View Receipt
+                                    </DropdownMenuItem>
+                                </SaleReceiptSheet>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))
