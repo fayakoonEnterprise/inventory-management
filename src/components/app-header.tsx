@@ -9,22 +9,22 @@ import { mockProducts } from '@/lib/data';
 
 export function AppHeader() {
   return (
-    <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
+    <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b bg-sidebar text-sidebar-foreground px-4 sm:px-6">
       <div className="flex items-center gap-2">
         <SidebarTrigger className="md:hidden" />
         <SaleFormSheet products={mockProducts}>
-          <Button size="sm">
+          <Button size="sm" variant="outline" className="bg-transparent border-sidebar-border hover:bg-sidebar-accent">
             <PlusCircle className="mr-2" />
             Register Sale
           </Button>
         </SaleFormSheet>
       </div>
       <div className="ml-auto flex items-center gap-2">
-        <Button variant="ghost" size="icon" className="rounded-full">
+        <Button variant="ghost" size="icon" className="rounded-full hover:bg-sidebar-accent">
           <Bell />
           <span className="sr-only">Toggle notifications</span>
         </Button>
-        <Button asChild variant="ghost" size="icon" className="rounded-full">
+        <Button asChild variant="ghost" size="icon" className="rounded-full hover:bg-sidebar-accent">
           <Link href="/settings">
             <Settings />
             <span className="sr-only">Settings</span>
