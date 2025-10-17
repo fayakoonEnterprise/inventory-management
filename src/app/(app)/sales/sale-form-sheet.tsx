@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -31,16 +31,20 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  SelectGroup,
+  SelectLabel,
 } from '@/components/ui/select';
-import { PlusCircle, Trash2 } from 'lucide-react';
+import { PlusCircle, Trash2, Printer } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
+import { useReactToPrint } from 'react-to-print';
+import { InvoicePreview } from './invoice-preview';
 
 const saleItemSchema = z.object({
   productId: z.string().min(1, 'Product is required'),
   quantity: z.coerce.number().min(1, 'Quantity must be at least 1'),
   unitPrice: z.coerce.number(),
   total: z.coerce.number(),
+  name: z.string(), // Added to store product name for invoice
 });
 
 const saleSchema = z.object({
@@ -56,10 +60,13 @@ type SaleFormSheetProps = {
 
 export function SaleFormSheet({ children, products }: SaleFormSheetProps) {
   const [open, setOpen] = useState(false);
+  const [submittedSale, setSubmittedSale] = useState<SaleFormValues | null>(null);
+  const invoiceRef = useRef(null);
+  
   const form = useForm<SaleFormValues>({
     resolver: zodResolver(saleSchema),
     defaultValues: {
-      items: [{ productId: '', quantity: 1, unitPrice: 0, total: 0 }],
+      items: [{ productId: '', quantity: 1, unitPrice: 0, total: 0, name: '' }],
     },
   });
 
@@ -70,11 +77,24 @@ export function SaleFormSheet({ children, products }: SaleFormSheetProps) {
   
   const watchItems = form.watch('items');
   const totalAmount = watchItems.reduce((sum, item) => sum + (item.total || 0), 0);
+  
+  const handlePrint = useReactToPrint({
+    content: () => invoiceRef.current,
+  });
 
   function onSubmit(values: SaleFormValues) {
     console.log(values);
-    setOpen(false);
-    form.reset();
+    setSubmittedSale(values);
+    // In a real app, you would save the sale to the database here.
+    // We are not resetting the form immediately to allow for printing.
+  }
+  
+  const handleSheetOpenChange = (isOpen: boolean) => {
+    setOpen(isOpen);
+    if (!isOpen) {
+      form.reset();
+      setSubmittedSale(null);
+    }
   }
 
   const handleProductChange = (value: string, index: number) => {
@@ -86,6 +106,7 @@ export function SaleFormSheet({ children, products }: SaleFormSheetProps) {
         quantity: quantity,
         unitPrice: product.sellingPrice,
         total: product.sellingPrice * quantity,
+        name: product.name,
       });
     }
   };
@@ -96,8 +117,37 @@ export function SaleFormSheet({ children, products }: SaleFormSheetProps) {
       update(index, { ...form.getValues(`items.${index}`), quantity, total: quantity * unitPrice });
   }
 
+  const groupedProducts = products.reduce((acc, product) => {
+    const { category } = product;
+    if (!acc[category]) {
+      acc[category] = [];
+    }
+    acc[category].push(product);
+    return acc;
+  }, {} as Record<string, Product[]>);
+
+  if (submittedSale) {
+    return (
+      <Sheet open={open} onOpenChange={handleSheetOpenChange}>
+        <SheetContent className="sm:max-w-md w-full flex flex-col">
+          <SheetHeader>
+            <SheetTitle>Invoice Preview</SheetTitle>
+            <SheetDescription>Review the generated invoice. You can print it or close this panel.</SheetDescription>
+          </SheetHeader>
+          <div className="flex-grow overflow-y-auto p-1">
+            <InvoicePreview ref={invoiceRef} sale={submittedSale} totalAmount={totalAmount} />
+          </div>
+          <SheetFooter className="pt-6 bg-background">
+            <Button variant="outline" onClick={() => handleSheetOpenChange(false)}>Close</Button>
+            <Button onClick={handlePrint}><Printer className="mr-2 h-4 w-4" /> Print Invoice</Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
   return (
-    <Sheet open={open} onOpenChange={(isOpen) => { setOpen(isOpen); if(!isOpen) form.reset(); }}>
+    <Sheet open={open} onOpenChange={handleSheetOpenChange}>
       <SheetTrigger asChild>{children}</SheetTrigger>
       <SheetContent className="sm:max-w-2xl w-full flex flex-col">
         <SheetHeader>
@@ -124,7 +174,12 @@ export function SaleFormSheet({ children, products }: SaleFormSheetProps) {
                                         </SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                        {products.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                                      {Object.entries(groupedProducts).map(([category, products]) => (
+                                        <SelectGroup key={category}>
+                                          <SelectLabel>{category}</SelectLabel>
+                                          {products.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                                        </SelectGroup>
+                                      ))}
                                     </SelectContent>
                                     </Select>
                                     <FormMessage />
@@ -162,7 +217,7 @@ export function SaleFormSheet({ children, products }: SaleFormSheetProps) {
                     variant="outline"
                     size="sm"
                     className="mt-4"
-                    onClick={() => append({ productId: '', quantity: 1, unitPrice: 0, total: 0 })}
+                    onClick={() => append({ productId: '', quantity: 1, unitPrice: 0, total: 0, name: '' })}
                 >
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Add Item

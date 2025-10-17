@@ -31,6 +31,8 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  SelectGroup,
+  SelectLabel,
 } from '@/components/ui/select';
 import { PlusCircle, Trash2 } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -99,6 +101,16 @@ export function PurchaseFormSheet({ children, products }: PurchaseFormSheetProps
       update(index, { ...currentItem, [fieldName]: value, total: quantity * unitPrice });
   }
 
+  const groupedProducts = products.reduce((acc, product) => {
+    const { category } = product;
+    if (!acc[category]) {
+      acc[category] = [];
+    }
+    acc[category].push(product);
+    return acc;
+  }, {} as Record<string, Product[]>);
+
+
   return (
     <Sheet open={open} onOpenChange={(isOpen) => { setOpen(isOpen); if(!isOpen) form.reset(); }}>
       <SheetTrigger asChild>{children}</SheetTrigger>
@@ -138,10 +150,15 @@ export function PurchaseFormSheet({ children, products }: PurchaseFormSheetProps
                                     <FormControl>
                                         <SelectTrigger>
                                         <SelectValue placeholder="Select a product" />
-                                        </SelectTrigger>
+                                        </Trigger>
                                     </FormControl>
                                     <SelectContent>
-                                        {products.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                                      {Object.entries(groupedProducts).map(([category, products]) => (
+                                        <SelectGroup key={category}>
+                                          <SelectLabel>{category}</SelectLabel>
+                                          {products.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
+                                        </SelectGroup>
+                                      ))}
                                     </SelectContent>
                                     </Select>
                                 </FormItem>

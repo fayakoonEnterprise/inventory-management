@@ -15,6 +15,7 @@ export type SaleItem = {
   quantity: number;
   unitPrice: number;
   total: number;
+  name: string;
 };
 
 export type Sale = {
