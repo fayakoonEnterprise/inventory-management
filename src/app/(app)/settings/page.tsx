@@ -33,6 +33,7 @@ import Image from 'next/image';
 import type { Database } from '@/supabase/types';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
+import { downloadAsCsv } from '@/lib/utils';
 
 type Settings = Database['public']['Tables']['settings']['Row'];
 type NewSettings = Database['public']['Tables']['settings']['Insert'];
@@ -159,6 +160,45 @@ export default function SettingsPage() {
         toast({ title: `${section} Updated`, description: successMessage});
     }
   }
+  
+  const exportProducts = async () => {
+    const { data, error } = await supabase.from('products').select('*');
+    if (error) {
+        toast({ variant: 'destructive', title: 'Error exporting products', description: error.message });
+        return;
+    }
+    if (data) {
+        downloadAsCsv(data, 'products.csv');
+        toast({ title: 'Products exported', description: 'Your products have been downloaded as products.csv.' });
+    }
+  }
+  
+  const exportSales = async () => {
+    const { data, error } = await supabase.from('sales').select(`
+        id, created_at, sale_date, total_amount, payment_type,
+        sale_items ( quantity, price, products ( name ) )
+    `);
+
+    if (error) {
+        toast({ variant: 'destructive', title: 'Error exporting sales', description: error.message });
+        return;
+    }
+    if (data) {
+        const flattenedData = data.map(sale => {
+            const itemsString = sale.sale_items.map(item => `${item.quantity}x ${item.products?.name}`).join('; ');
+            return {
+                sale_id: sale.id,
+                created_at: sale.created_at,
+                sale_date: sale.sale_date,
+                total_amount: sale.total_amount,
+                payment_type: sale.payment_type,
+                items: itemsString,
+            }
+        });
+        downloadAsCsv(flattenedData, 'sales.csv');
+        toast({ title: 'Sales exported', description: 'Your sales have been downloaded as sales.csv.' });
+    }
+  }
 
   if (loading) {
     return <SettingsSkeleton />;
@@ -268,14 +308,14 @@ export default function SettingsPage() {
                   <h3 className="font-semibold">Export All Products</h3>
                   <p className="text-sm text-muted-foreground">Download a CSV file of all your products.</p>
                 </div>
-                <Button variant="outline">Export</Button>
+                <Button variant="outline" onClick={exportProducts}>Export</Button>
               </div>
               <div className="flex items-center justify-between rounded-lg border p-4">
                 <div>
                   <h3 className="font-semibold">Export All Sales</h3>
                   <p className="text-sm text-muted-foreground">Download a CSV file of all your sales records.</p>
                 </div>
-                <Button variant="outline">Export</Button>
+                <Button variant="outline" onClick={exportSales}>Export</Button>
               </div>
             </CardContent>
           </Card>
