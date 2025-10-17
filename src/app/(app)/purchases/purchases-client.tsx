@@ -52,9 +52,9 @@ export function PurchasesClient({ initialPurchases, products }: PurchasesClientP
   const totalPurchases = purchases.reduce((acc, purchase) => acc + purchase.total, 0);
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-PK', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'PKR',
     }).format(amount);
   };
   
@@ -99,7 +99,7 @@ export function PurchasesClient({ initialPurchases, products }: PurchasesClientP
             <TableBody>
               {purchases.length > 0 ? (
                 purchases.map((purchase) => (
-                  <TableRow key={purchase.id}>
+                  <TableRow key={purchase.id} className="even:bg-muted/50">
                     <TableCell className="font-medium">
                         <div>{purchase.purchaseOrder}</div>
                         <div className="text-sm text-muted-foreground">{format(new Date(purchase.date), 'hh:mm a')}</div>

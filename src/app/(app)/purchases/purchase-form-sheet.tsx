@@ -174,7 +174,7 @@ export function PurchaseFormSheet({ children, products }: PurchaseFormSheetProps
                             <div className="col-span-1">
                                <FormLabel>Total</FormLabel>
                                 <div className="font-medium text-sm h-10 flex items-center">
-                                    ${(watchItems[index]?.total || 0).toFixed(2)}
+                                    PKR {(watchItems[index]?.total || 0).toFixed(2)}
                                 </div>
                             </div>
                         </div>
@@ -198,7 +198,7 @@ export function PurchaseFormSheet({ children, products }: PurchaseFormSheetProps
             <SheetFooter className="mt-auto pt-6 bg-background">
                 <div className="flex justify-between items-center w-full">
                     <div className="text-lg font-medium">
-                        Total Amount: <span className="text-primary font-bold">${totalAmount.toFixed(2)}</span>
+                        Total Amount: <span className="text-primary font-bold">PKR {totalAmount.toFixed(2)}</span>
                     </div>
                     <Button type="submit">Record Purchase</Button>
                 </div>

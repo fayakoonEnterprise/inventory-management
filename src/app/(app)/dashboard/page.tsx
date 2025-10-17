@@ -1,6 +1,6 @@
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { DollarSign, Package, Users, Activity } from 'lucide-react';
+import { Package, Users, Activity } from 'lucide-react';
 import {
   getTodaysSales,
   getTotalRevenue,
@@ -9,6 +9,10 @@ import {
 } from '@/lib/data';
 import { TopProductsChart } from './top-products-chart';
 import { LowStockAlerts } from './low-stock-alerts';
+
+function CurrencyIcon() {
+    return <span className="text-muted-foreground text-sm">PKR</span>;
+}
 
 export default function DashboardPage() {
   const todaysSales = getTodaysSales();
@@ -24,20 +28,20 @@ export default function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Today's Sales</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <CurrencyIcon />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${todaysSales.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+            <div className="text-2xl font-bold">{todaysSales.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
             <p className="text-xs text-muted-foreground">+20.1% from last month</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <CurrencyIcon />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">${totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+            <div className="text-2xl font-bold">{totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
             <p className="text-xs text-muted-foreground">+180.1% from last year</p>
           </CardContent>
         </Card>

@@ -54,9 +54,9 @@ export function SalesClient({ initialSales, products }: SalesClientProps) {
   const totalSales = sales.reduce((acc, sale) => acc + sale.total, 0);
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-PK', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'PKR',
     }).format(amount);
   };
   
@@ -100,7 +100,7 @@ export function SalesClient({ initialSales, products }: SalesClientProps) {
             <TableBody>
               {sales.length > 0 ? (
                 sales.map((sale) => (
-                  <TableRow key={sale.id}>
+                  <TableRow key={sale.id} className="even:bg-muted/50">
                     <TableCell className="font-medium">
                         <div>{sale.invoiceNumber}</div>
                         <div className="text-sm text-muted-foreground">{format(new Date(sale.date), 'hh:mm a')}</div>

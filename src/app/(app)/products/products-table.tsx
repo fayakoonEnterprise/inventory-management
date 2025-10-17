@@ -23,9 +23,9 @@ import { ProductFormSheet } from './product-form-sheet';
 
 export function ProductsTable({ data }: { data: Product[] }) {
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-PK', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'PKR',
     }).format(amount);
   };
 
@@ -45,7 +45,7 @@ export function ProductsTable({ data }: { data: Product[] }) {
         </TableHeader>
         <TableBody>
           {data.map((product) => (
-            <TableRow key={product.id}>
+            <TableRow key={product.id} className="even:bg-muted/50">
               <TableCell>
                 <Avatar className="rounded-md">
                   <AvatarImage src={product.imageUrl} alt={product.name} />

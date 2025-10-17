@@ -31,9 +31,9 @@ export default function ReportsPage() {
             </CardHeader>
             <CardContent>
                 <div className="space-y-2 text-sm">
-                    <div className="flex justify-between"><span>Total Sales:</span> <span className="font-medium">${totalSales.toFixed(2)}</span></div>
-                    <div className="flex justify-between"><span>Total Purchases:</span> <span className="font-medium">${totalPurchases.toFixed(2)}</span></div>
-                    <div className="flex justify-between font-semibold text-base"><span>Profit:</span> <span className="text-accent">${profit.toFixed(2)}</span></div>
+                    <div className="flex justify-between"><span>Total Sales:</span> <span className="font-medium">PKR {totalSales.toFixed(2)}</span></div>
+                    <div className="flex justify-between"><span>Total Purchases:</span> <span className="font-medium">PKR {totalPurchases.toFixed(2)}</span></div>
+                    <div className="flex justify-between font-semibold text-base"><span>Profit:</span> <span className="text-accent">PKR {profit.toFixed(2)}</span></div>
                 </div>
             </CardContent>
             <CardContent>
@@ -59,7 +59,7 @@ export default function ReportsPage() {
                         </TableHeader>
                         <TableBody>
                         {mockProducts.map((product) => (
-                            <TableRow key={product.id}>
+                            <TableRow key={product.id} className="even:bg-muted/50">
                                 <TableCell className="font-medium">{product.name}</TableCell>
                                 <TableCell>{product.category}</TableCell>
                                 <TableCell className="text-right">{product.stock}</TableCell>

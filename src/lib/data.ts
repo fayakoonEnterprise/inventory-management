@@ -28,7 +28,7 @@ export const mockSettings: Settings = {
     shopName: 'ShopStock',
     logoUrl: PlaceHolderImages.find(img => img.id === 'shop-logo')?.imageUrl || '',
     address: '123 Market St, Suite 456, San Francisco, CA 94103',
-    currency: 'USD',
+    currency: 'PKR',
     taxEnabled: true
 };
 

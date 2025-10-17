@@ -84,6 +84,7 @@ export default function SettingsPage() {
                   <SelectItem value="eur">EUR (€)</SelectItem>
                   <SelectItem value="gbp">GBP (£)</SelectItem>
                   <SelectItem value="inr">INR (₹)</SelectItem>
+                  <SelectItem value="pkr">PKR (₨)</SelectItem>
                 </SelectContent>
               </Select>
             </CardContent>
