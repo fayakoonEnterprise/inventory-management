@@ -65,7 +65,7 @@ export function SalesClient({ initialSales, products }: SalesClientProps) {
   }
 
   return (
-    <Card>
+    <Card className="w-full">
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle>Sales for {format(date, 'PPP')}</CardTitle>
