@@ -1,4 +1,5 @@
 
+
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileText, Download, Briefcase, Archive } from 'lucide-react';
@@ -10,7 +11,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { mockProducts } from '@/lib/data';
 import { getTotalProfit } from '@/lib/dashboard-data';
 import { supabase } from '@/supabase/supabaseClient';
 
@@ -22,6 +22,9 @@ export default async function ReportsPage() {
     const totalPurchases = purchaseData?.reduce((acc, p) => acc + (p.total_amount || 0), 0) || 0;
     
     const profit = await getTotalProfit();
+    
+    const { data: productsData } = await supabase.from('products').select('*');
+    const products = productsData || [];
 
   return (
     <>
@@ -60,7 +63,7 @@ export default async function ReportsPage() {
                         </TableRow>
                         </TableHeader>
                         <TableBody>
-                        {mockProducts.map((product) => (
+                        {products.map((product) => (
                             <TableRow key={product.id} className="even:bg-muted/50">
                                 <TableCell className="font-medium">{product.name}</TableCell>
                                 <TableCell>{product.category}</TableCell>

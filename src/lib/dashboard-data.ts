@@ -57,3 +57,35 @@ export async function getDashboardStats(period: Period): Promise<DashboardStats>
 
     return data;
 }
+
+export async function getTotalProfit(): Promise<number> {
+    const { data: saleItems, error } = await supabase
+      .from('sale_items')
+      .select(`
+        quantity,
+        price,
+        products (
+          purchase_price
+        )
+      `);
+  
+    if (error) {
+      console.error('Error fetching data for profit calculation:', error);
+      return 0;
+    }
+  
+    if (!saleItems) {
+      return 0;
+    }
+  
+    const totalProfit = saleItems.reduce((acc, item) => {
+      const product = item.products;
+      if (product) {
+        const profitPerItem = item.price - product.purchase_price;
+        return acc + (profitPerItem * item.quantity);
+      }
+      return acc;
+    }, 0);
+  
+    return totalProfit;
+}
