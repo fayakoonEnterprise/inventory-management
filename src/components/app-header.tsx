@@ -16,11 +16,19 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Bell, PlusCircle, LogOut } from 'lucide-react';
+import { Bell, PlusCircle, LogOut, Calculator } from 'lucide-react';
 import { SaleFormSheet } from '@/app/(app)/sales/sale-form-sheet';
 import { ThemeToggle } from './theme-toggle';
 import { useEffect, useState } from 'react';
 import type { Product } from '@/lib/types';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Calculator as CalculatorComponent } from './calculator';
 
 export function AppHeader({ session, shopName }: { session: Session | null, shopName?: string | null }) {
   const router = useRouter();
@@ -53,6 +61,17 @@ export function AppHeader({ session, shopName }: { session: Session | null, shop
       </div>
       <div className="ml-auto flex items-center gap-2">
         <ThemeToggle />
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button variant="ghost" size="icon" className="rounded-full hover:bg-sidebar-accent">
+              <Calculator />
+              <span className="sr-only">Open Calculator</span>
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-xs p-0 border-0 bg-black">
+              <CalculatorComponent />
+          </DialogContent>
+        </Dialog>
         <Button variant="ghost" size="icon" className="rounded-full hover:bg-sidebar-accent">
           <Bell />
           <span className="sr-only">Toggle notifications</span>
