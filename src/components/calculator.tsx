@@ -262,13 +262,16 @@ export function Calculator() {
           </motion.div>
         )}
       </AnimatePresence>
-       <div className="h-20 flex items-end justify-end pr-2 overflow-x-auto whitespace-nowrap dir-rtl">
+       <div className="h-20 w-full flex items-end relative">
         <motion.div
           key={display}
           initial={{ opacity: 0.5 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.1 }}
-          className={cn('font-light', getFontSize())}
+          className={cn(
+            'font-light absolute right-2 bottom-0 dir-ltr overflow-x-auto whitespace-nowrap max-w-full',
+            getFontSize()
+          )}
         >
           {display}
         </motion.div>
@@ -305,3 +308,5 @@ export function Calculator() {
     </div>
   );
 }
+
+    
