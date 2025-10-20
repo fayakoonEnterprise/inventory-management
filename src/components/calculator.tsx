@@ -5,7 +5,6 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-import { motion, AnimatePresence } from 'framer-motion';
 
 const CalculatorButton = ({
   onClick,
@@ -97,6 +96,7 @@ export function Calculator() {
             calculatorEl.removeEventListener('keydown', handleKeyDown);
         }
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [display, firstOperand, operator, waitingForSecondOperand]);
 
 
@@ -242,14 +242,8 @@ export function Calculator() {
 
   return (
     <div ref={calculatorRef} className="bg-black text-white p-4 space-y-4 rounded-lg outline-none" tabIndex={-1}>
-       <AnimatePresence>
-        {history.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="overflow-hidden"
-          >
+       {history.length > 0 && (
+          <div className="overflow-hidden">
             <ScrollArea className="h-24 w-full" ref={scrollAreaRef}>
               <div className="flex flex-col items-end justify-end p-2 space-y-1">
                 {history.map((entry, index) => (
@@ -259,22 +253,17 @@ export function Calculator() {
                 ))}
               </div>
             </ScrollArea>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
-       <div className="h-20 w-full flex items-end relative">
-        <motion.div
-          key={display}
-          initial={{ opacity: 0.5 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.1 }}
+       <div className="h-20 w-full relative">
+        <div
           className={cn(
-            'font-light absolute right-2 bottom-0 dir-ltr overflow-x-auto whitespace-nowrap max-w-full',
+            'font-light absolute right-2 bottom-0 dir-rtl overflow-x-auto whitespace-nowrap max-w-full',
             getFontSize()
           )}
         >
           {display}
-        </motion.div>
+        </div>
       </div>
 
       <div className="grid grid-cols-4 gap-3">
@@ -308,5 +297,3 @@ export function Calculator() {
     </div>
   );
 }
-
-    
