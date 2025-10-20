@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, Suspense } from 'react';
 import { supabase } from '@/supabase/supabaseClient';
 import type { Product } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,29 +8,13 @@ import { ShoppingBag, BarChart3, DollarSign } from 'lucide-react';
 import { getDashboardStats } from '@/lib/dashboard-data';
 import type { DashboardStats } from '@/lib/dashboard-data';
 import { TopProductsChart } from './top-products-chart';
-import { LowStockAlerts } from './low-stock-alerts';
+import { LowStockAlerts, LowStockAlertsSkeleton } from './low-stock-alerts';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsTrigger, TabsList } from '@/components/ui/tabs';
-import { Suspense } from 'react';
+
 
 function CurrencyIcon() {
     return <span className="text-muted-foreground text-sm">PKR</span>;
-}
-
-function LowStockAlertsSkeleton() {
-    return (
-        <div className="space-y-4">
-            {[...Array(3)].map((_, i) => (
-                <div key={i} className="flex items-center">
-                    <Skeleton className="h-9 w-9 rounded-full" />
-                    <div className="ml-4 space-y-2">
-                        <Skeleton className="h-4 w-32" />
-                        <Skeleton className="h-3 w-24" />
-                    </div>
-                </div>
-            ))}
-        </div>
-    );
 }
 
 function DashboardSkeleton() {
