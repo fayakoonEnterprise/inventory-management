@@ -69,6 +69,9 @@ export function AppHeader({ session, shopName }: { session: Session | null, shop
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-xs p-0 border-0 bg-black">
+              <DialogHeader>
+                <DialogTitle className="sr-only">Calculator</DialogTitle>
+              </DialogHeader>
               <CalculatorComponent />
           </DialogContent>
         </Dialog>
