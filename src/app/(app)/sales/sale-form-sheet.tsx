@@ -251,6 +251,7 @@ export function SaleFormSheet({ children, products, onSaleAdded }: SaleFormSheet
                 <div className="space-y-4">
                 {fields.map((field, index) => {
                   const item = watchedItems[index];
+                  if (!item) return null; // FIX: Ensure item exists before rendering
                   const remainingStock = item && item.stock !== undefined ? item.stock - item.quantity : null;
                   return (
                     <div key={field.id} className="flex items-start gap-2 p-3 border rounded-lg">
@@ -364,7 +365,3 @@ export function SaleFormSheet({ children, products, onSaleAdded }: SaleFormSheet
     </Sheet>
   );
 }
-
-    
-
-    
