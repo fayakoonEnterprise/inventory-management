@@ -12,9 +12,26 @@ import { TopProductsChart } from './top-products-chart';
 import { LowStockAlerts } from './low-stock-alerts';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsTrigger, TabsList } from '@/components/ui/tabs';
+import { Suspense } from 'react';
 
 function CurrencyIcon() {
     return <span className="text-muted-foreground text-sm">PKR</span>;
+}
+
+function LowStockAlertsSkeleton() {
+    return (
+        <div className="space-y-4">
+            {[...Array(3)].map((_, i) => (
+                <div key={i} className="flex items-center">
+                    <Skeleton className="h-9 w-9 rounded-full" />
+                    <div className="ml-4 space-y-2">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-3 w-24" />
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
 }
 
 function DashboardSkeleton() {
@@ -50,17 +67,7 @@ function DashboardSkeleton() {
                         <CardTitle>Low Stock Alerts</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="space-y-4">
-                            {[...Array(3)].map((_, i) => (
-                                <div key={i} className="flex items-center">
-                                    <Skeleton className="h-9 w-9 rounded-full" />
-                                    <div className="ml-4 space-y-2">
-                                        <Skeleton className="h-4 w-32" />
-                                        <Skeleton className="h-3 w-24" />
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                        <LowStockAlertsSkeleton />
                     </CardContent>
                 </Card>
             </div>
@@ -73,7 +80,6 @@ type Period = 'today' | 'weekly' | 'monthly';
 export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [lowStockProducts, setLowStockProducts] = useState<Product[]>([]);
   const [period, setPeriod] = useState<Period>('today');
 
 
@@ -90,31 +96,17 @@ export default function DashboardPage() {
     }
   }, []);
 
-  const fetchLowStockProducts = useCallback(async () => {
-    // This is the correct way to call a function that performs a column-to-column comparison.
-    const { data, error } = await supabase.rpc('get_low_stock_products');
-
-    if (error) {
-        console.error("Error fetching low stock products:", error.message);
-        setLowStockProducts([]);
-    } else {
-        // The result from an RPC call is not strongly typed by default
-        // so we cast it to Product[]
-        setLowStockProducts((data as Product[]) || []);
-    }
-  }, []);
-
   useEffect(() => {
     fetchDashboardData(period);
   }, [period, fetchDashboardData]);
 
   useEffect(() => {
-    fetchLowStockProducts();
-    
     const handleDbChanges = (payload: any) => {
         console.log('Change detected, refetching dashboard data:', payload);
         fetchDashboardData(period);
-        fetchLowStockProducts();
+        // Note: Low stock alerts will be refetched on page navigation/refresh
+        // due to it being a server component. Real-time updates for it would
+        // require a different architecture (e.g., client-side fetching with subscriptions).
     }
 
     const channel = supabase
@@ -127,7 +119,7 @@ export default function DashboardPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [period, fetchDashboardData, fetchLowStockProducts]);
+  }, [period, fetchDashboardData]);
 
   if (loading || !stats) {
     return <DashboardSkeleton />;
@@ -208,10 +200,12 @@ export default function DashboardPage() {
         </Card>
         <Card className="lg:col-span-3">
           <CardHeader>
-            <CardTitle>Low Stock Alerts ({lowStockProducts.length})</CardTitle>
+            <CardTitle>Low Stock Alerts</CardTitle>
           </CardHeader>
           <CardContent>
-            <LowStockAlerts products={lowStockProducts} />
+            <Suspense fallback={<LowStockAlertsSkeleton />}>
+                <LowStockAlerts />
+            </Suspense>
           </CardContent>
         </Card>
       </div>

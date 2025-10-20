@@ -1,9 +1,28 @@
+
+import { supabase } from '@/supabase/supabaseClient';
 import type { Product } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Package } from 'lucide-react';
 
-export function LowStockAlerts({ products }: { products: Product[] }) {
+async function getLowStockProducts() {
+    // This is the correct way to call a function that performs a column-to-column comparison.
+    const { data, error } = await supabase.rpc('get_low_stock_products');
+
+    if (error) {
+        // Log the error for server-side debugging
+        console.error("Error fetching low stock products:", error.message);
+        // Return an empty array to prevent the component from crashing.
+        return [];
+    }
+    // The result from an RPC call is not strongly typed by default
+    // so we cast it to Product[]
+    return (data as Product[]) || [];
+}
+
+export async function LowStockAlerts() {
+    const products = await getLowStockProducts();
+
     if (products.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center h-full text-center p-8">
