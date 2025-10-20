@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect } from 'react';
 import { supabase } from '@/supabase/supabaseClient';
@@ -48,6 +49,7 @@ export default function SalesPage() {
                 sale_items (
                     quantity,
                     price,
+                    unit_sold,
                     products (
                         id,
                         name
@@ -101,3 +103,5 @@ export default function SalesPage() {
     </>
   );
 }
+
+    

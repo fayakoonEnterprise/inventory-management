@@ -1,3 +1,4 @@
+
 export type Json =
   | string
   | number
@@ -248,6 +249,7 @@ export type Database = {
           product_id: string | null
           quantity: number
           sale_id: string | null
+          unit_sold: string | null
         }
         Insert: {
           id?: string
@@ -255,6 +257,7 @@ export type Database = {
           product_id?: string | null
           quantity: number
           sale_id?: string | null
+          unit_sold?: string | null
         }
         Update: {
           id?: string
@@ -262,6 +265,7 @@ export type Database = {
           product_id?: string | null
           quantity?: number
           sale_id?: string | null
+          unit_sold?: string | null
         }
         Relationships: [
           {
@@ -349,12 +353,14 @@ export type Database = {
       }
       dashboard_metrics: {
         Row: {
-          sale_date: string | null
+          day: string | null
+          generated_on: string | null
+          month: string | null
           top_3_products: string | null
           total_items_sold: number | null
           total_profit: number | null
           total_revenue: number | null
-          total_sales: number | null
+          week: string | null
         }
         Relationships: []
       }
@@ -517,3 +523,5 @@ export const Constants = {
     Enums: {},
   },
 } as const
+
+    

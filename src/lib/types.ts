@@ -1,3 +1,4 @@
+
 import type { Database } from "@/supabase/types";
 
 export type Product = Database["public"]["Tables"]["products"]["Row"];
@@ -16,7 +17,7 @@ export type Settings = {
 };
 
 export type SaleWithItems = Sale & {
-    sale_items: (Pick<SaleItem, 'quantity' | 'price'> & {
+    sale_items: (Pick<SaleItem, 'quantity' | 'price' | 'unit_sold'> & {
         products: Pick<Product, 'id' | 'name'> | null
     })[]
 }
@@ -26,3 +27,5 @@ export type PurchaseWithItems = Purchase & {
         products: Pick<Product, 'id' | 'name'> | null
     })[]
 }
+
+    

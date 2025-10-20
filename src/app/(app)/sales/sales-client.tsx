@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { Product, SaleWithItems } from '@/lib/types';
@@ -55,6 +56,7 @@ export function SalesClient({ initialSales, products, onDateChange }: SalesClien
             sale_items (
                 quantity,
                 price,
+                unit_sold,
                 products (
                     id,
                     name
@@ -126,7 +128,7 @@ export function SalesClient({ initialSales, products, onDateChange }: SalesClien
                     <TableCell>
                       {sale.sale_items.map((item, index) => (
                         <div key={index} className="text-sm">
-                          {item.quantity} x {item.products?.name || 'Unknown Product'}
+                          {item.quantity} x {item.products?.name || 'Unknown Product'} <span className="text-muted-foreground">({item.unit_sold})</span>
                         </div>
                       ))}
                     </TableCell>
@@ -169,3 +171,5 @@ export function SalesClient({ initialSales, products, onDateChange }: SalesClien
     </Card>
   );
 }
+
+    

@@ -2,7 +2,7 @@
 "use client"
 
 import * as React from "react"
-import { Check, ChevronsUpDown, PlusCircle } from "lucide-react"
+import { Check, ChevronsUpDown, PlusCircle, Box } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -24,6 +24,7 @@ import {
 type ComboboxOption = {
   value: string;
   label: string;
+  hasBox?: boolean | null;
 };
 
 type ComboboxOptionGroup = {
@@ -56,12 +57,10 @@ export function Combobox({
   const [search, setSearch] = React.useState("");
 
   const selectedOption = React.useMemo(() => {
-    for (const option of options) {
-      if ('options' in option) {
-        const found = option.options.find((o) => o.value === value);
+    for (const group of options) {
+       if ('options' in group) {
+        const found = group.options.find((o) => o.value === value);
         if (found) return found;
-      } else {
-        if (option.value === value) return option;
       }
     }
     return null;
@@ -104,13 +103,13 @@ export function Combobox({
                     notFoundPlaceholder
                 )}
             </CommandEmpty>
-            {options.map((option, index) => {
-              if ('options' in option) {
+            {options.map((group, index) => {
+              if ('options' in group) {
                 return (
-                  <React.Fragment key={option.label}>
+                  <React.Fragment key={group.label}>
                     {index > 0 && <CommandSeparator />}
-                    <CommandGroup heading={option.label}>
-                      {option.options.map((item) => (
+                    <CommandGroup heading={group.label}>
+                      {group.options.map((item) => (
                         <CommandItem
                           key={item.value}
                           value={item.label} // Search is based on label
@@ -125,32 +124,15 @@ export function Combobox({
                               value === item.value ? "opacity-100" : "opacity-0"
                             )}
                           />
-                          {item.label}
+                          <span className="flex-1">{item.label}</span>
+                          {item.hasBox && <Box className="ml-2 h-4 w-4 text-muted-foreground" />}
                         </CommandItem>
                       ))}
                     </CommandGroup>
                   </React.Fragment>
                 );
               }
-              // This is for non-grouped options, if you ever need them.
-              return (
-                <CommandItem
-                  key={option.value}
-                  value={option.label}
-                  onSelect={() => {
-                    onValueChange?.(option.value);
-                    setOpen(false);
-                  }}
-                >
-                  <Check
-                    className={cn(
-                      "mr-2 h-4 w-4",
-                      value === option.value ? "opacity-100" : "opacity-0"
-                    )}
-                  />
-                  {option.label}
-                </CommandItem>
-              );
+              return null; // Handle non-grouped options if necessary
             })}
           </CommandList>
         </Command>
@@ -158,3 +140,5 @@ export function Combobox({
     </Popover>
   )
 }
+
+    
