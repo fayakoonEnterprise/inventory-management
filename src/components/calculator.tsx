@@ -129,7 +129,6 @@ export function Calculator() {
     setDisplay(String(parseFloat(display) * -1));
   };
 
-_
   const inputPercent = () => {
     setDisplay(String(parseFloat(display) / 100));
   };
@@ -200,7 +199,7 @@ _
         
         <CalculatorButton onClick={() => inputDigit('0')} className="col-span-2 w-full">0</CalculatorButton>
         <CalculatorButton onClick={inputDecimal}>.</CalculatorButton>
-        <CalculatorButton onClick={handleEquals} className="bg-orange-500 hover:bg-orange-400">=</CalculatorButton>
+        <CalculatorButton onClick={handleEquals} className="bg-orange-500 hover:bg-orange-40-500">=</CalculatorButton>
       </div>
        {history.length > 0 && (
           <Button variant="link" className="w-full text-zinc-400" onClick={clearHistory}>Clear History</Button>
@@ -208,4 +207,5 @@ _
     </div>
   );
 }
+
 
