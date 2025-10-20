@@ -125,7 +125,7 @@ export function SaleFormSheet({ children, products, onSaleAdded }: SaleFormSheet
     }
     
     // IMPORTANT: Stock update is now handled by a database trigger.
-    // We no longer update stock from the client-side.
+    // The client-side stock update logic has been removed.
 
     toast({ title: 'Sale Recorded', description: 'The sale has been successfully recorded.' });
     const uiItems = values.items.map(item => {
@@ -364,5 +364,7 @@ export function SaleFormSheet({ children, products, onSaleAdded }: SaleFormSheet
     </Sheet>
   );
 }
+
+    
 
     
