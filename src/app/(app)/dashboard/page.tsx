@@ -92,10 +92,8 @@ export default function DashboardPage() {
 
   const fetchLowStockProducts = useCallback(async () => {
     const { data, error } = await supabase
-      .from('products')
-      .select('*')
-      .lte('stock', 'low_stock_limit');
-    
+      .rpc('get_low_stock_products');
+
     if (error) {
         console.error("Error fetching low stock products:", error.message);
         setLowStockProducts([]);

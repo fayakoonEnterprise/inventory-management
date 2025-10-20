@@ -387,7 +387,28 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      get_low_stock_products: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          category: string | null
+          created_at: string | null
+          id: string
+          is_box_sellable: boolean | null
+          low_stock_limit: number | null
+          name: string
+          price_per_box: number | null
+          price_per_piece: number | null
+          purchase_price: number
+          selling_price: number
+          stock: number | null
+          unit: string | null
+          units_per_box: number | null
+        }[]
+      }
+      handle_stock_deduction: {
+        Args: Record<PropertyKey, never>
+        Returns: unknown
+      }
     }
     Enums: {
       [_ in never]: never
@@ -523,5 +544,3 @@ export const Constants = {
     Enums: {},
   },
 } as const
-
-    
