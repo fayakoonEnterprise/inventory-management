@@ -91,18 +91,16 @@ export default function DashboardPage() {
   }, []);
 
   const fetchLowStockProducts = useCallback(async () => {
-    const { data, error } = await supabase
-      .from('products')
-      .select('*')
-      .filter('stock', 'lte', 'column:low_stock_limit');
+    // This is the correct way to call a function that performs a column-to-column comparison.
+    const { data, error } = await supabase.rpc('get_low_stock_products');
 
     if (error) {
         console.error("Error fetching low stock products:", error.message);
         setLowStockProducts([]);
     } else {
-        // The result from a filter with a column reference is not strongly typed
+        // The result from an RPC call is not strongly typed by default
         // so we cast it to Product[]
-        setLowStockProducts((data as any[]) || []);
+        setLowStockProducts((data as Product[]) || []);
     }
   }, []);
 
