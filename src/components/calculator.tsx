@@ -35,6 +35,7 @@ export function Calculator() {
   const [waitingForSecondOperand, setWaitingForSecondOperand] = useState(false);
   const [history, setHistory] = useState<string[]>([]);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const calculatorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -48,6 +49,38 @@ export function Calculator() {
     }
   }, [history]);
 
+    useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+        const { key } = event;
+
+        if (/\d/.test(key)) {
+            inputDigit(key);
+        } else if (key === '.') {
+            inputDecimal();
+        } else if (key === '+' || key === '-') {
+            performOperation(key);
+        } else if (key === '*') {
+            performOperation('×');
+        } else if (key === '/') {
+            performOperation('÷');
+        } else if (key === 'Enter' || key === '=') {
+            handleEquals();
+        } else if (key === 'Backspace') {
+            backspace();
+        } else if (key === 'Escape') {
+            clearDisplay();
+        } else if (key === '%') {
+            inputPercent();
+        }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+        window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [display, firstOperand, operator, waitingForSecondOperand]); // Add dependencies
+
+
   const inputDigit = (digit: string) => {
     if (waitingForSecondOperand) {
       setDisplay(digit);
@@ -58,6 +91,11 @@ export function Calculator() {
   };
 
   const inputDecimal = () => {
+    if (waitingForSecondOperand) {
+        setDisplay('0.');
+        setWaitingForSecondOperand(false);
+        return;
+    }
     if (!display.includes('.')) {
       setDisplay(display + '.');
     }
@@ -94,7 +132,7 @@ export function Calculator() {
       case '×':
         return first * second;
       case '÷':
-        return first / second;
+        return second === 0 ? Infinity : first / second;
       default:
         return second;
     }
@@ -103,6 +141,8 @@ export function Calculator() {
   const handleEquals = () => {
     if (operator && firstOperand !== null) {
       const inputValue = parseFloat(display);
+      if (waitingForSecondOperand) return; // Don't do anything if we press = right after an operator
+      
       const result = calculate(firstOperand, inputValue, operator);
       const resultString = String(parseFloat(result.toFixed(7)));
       
@@ -121,6 +161,11 @@ export function Calculator() {
     setWaitingForSecondOperand(false);
   };
 
+  const backspace = () => {
+      if (waitingForSecondOperand) return;
+      setDisplay(display.length > 1 ? display.slice(0, -1) : '0');
+  }
+
   const clearHistory = () => {
     setHistory([]);
   };
@@ -131,11 +176,13 @@ export function Calculator() {
 
   const inputPercent = () => {
     setDisplay(String(parseFloat(display) / 100));
+    setWaitingForSecondOperand(true);
   };
 
 
   const getFontSize = () => {
     const length = display.length;
+    if (display === 'Infinity') return 'text-4xl';
     if (length > 10) return 'text-2xl';
     if (length > 8) return 'text-3xl';
     if (length > 6) return 'text-4xl';
@@ -143,7 +190,7 @@ export function Calculator() {
   };
 
   return (
-    <div className="bg-black text-white p-4 space-y-4 rounded-lg">
+    <div ref={calculatorRef} className="bg-black text-white p-4 space-y-4 rounded-lg outline-none" tabIndex={-1}>
        <AnimatePresence>
         {history.length > 0 && (
           <motion.div
@@ -207,5 +254,6 @@ export function Calculator() {
     </div>
   );
 }
+
 
 
