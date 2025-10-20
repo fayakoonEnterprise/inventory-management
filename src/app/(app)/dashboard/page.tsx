@@ -92,13 +92,17 @@ export default function DashboardPage() {
 
   const fetchLowStockProducts = useCallback(async () => {
     const { data, error } = await supabase
-      .rpc('get_low_stock_products');
+      .from('products')
+      .select('*')
+      .lte('stock', 'low_stock_limit');
 
     if (error) {
         console.error("Error fetching low stock products:", error.message);
         setLowStockProducts([]);
     } else {
-        setLowStockProducts(data || []);
+        // The result from a filter with a column reference is not strongly typed
+        // so we cast it to Product[]
+        setLowStockProducts((data as any[]) || []);
     }
   }, []);
 
