@@ -262,7 +262,7 @@ export function Calculator() {
           </motion.div>
         )}
       </AnimatePresence>
-       <div className="h-20 flex items-end justify-end pr-2">
+       <div className="h-20 flex items-end justify-end pr-2 overflow-x-auto whitespace-nowrap dir-rtl">
         <motion.div
           key={display}
           initial={{ opacity: 0.5 }}
@@ -305,5 +305,3 @@ export function Calculator() {
     </div>
   );
 }
-
-    
